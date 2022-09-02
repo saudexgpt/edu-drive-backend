@@ -135,22 +135,23 @@ class FeesController extends Controller
                 ->pluck('id');
 
             $applicable_fee_ids_array = $fee_ids->toArray();
+            if ($school_fees->isNotEmpty()) {
+                foreach ($school_fees as $school_fee) {
+                    $level_id = $school_fee->level_id;
+                    $total_fee = $school_fee->total_amount;
 
-            foreach ($school_fees as $school_fee) {
-                $level_id = $school_fee->level_id;
-                $total_fee = $school_fee->total_amount;
+                    $students_in_class = $level->studentsInClass;
+                    if (!empty($students_in_class)) {
 
-                $students_in_class = $level->studentsInClass;
-                if (!empty($students_in_class)) {
-
-                    foreach ($students_in_class as $student_in_class) {
-                        $request->student_id = $student_in_class->student_id;
-                        $request->discount = 0;
-                        $request->total_fee = $total_fee;
-                        $request->school_id = $school_id;
-                        $request->sess_id = $sess_id;
-                        $request->term_id = $term_id;
-                        $payment_obj->createSchoolFeesPaymentMonitor($request, $level_id, $applicable_fee_ids_array);
+                        foreach ($students_in_class as $student_in_class) {
+                            $request->student_id = $student_in_class->student_id;
+                            $request->discount = 0;
+                            $request->total_fee = $total_fee;
+                            $request->school_id = $school_id;
+                            $request->sess_id = $sess_id;
+                            $request->term_id = $term_id;
+                            $payment_obj->createSchoolFeesPaymentMonitor($request, $level_id, $applicable_fee_ids_array);
+                        }
                     }
                 }
             }
