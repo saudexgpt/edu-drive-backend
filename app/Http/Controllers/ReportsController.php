@@ -728,8 +728,15 @@ class ReportsController extends Controller
         $subject_names = [];
         $data = [];
         foreach ($results as $result) {
-            $subject_names[] = $result->subjectTeacher->subject->code . ' (' . $result->classTeacher->c_class->name . ')';
-            $data[] = sprintf("%01.1f", $result->average);
+            if ($result->average > 0) {
+
+                $subject_names[] = $result->subjectTeacher->subject->code . ' (' . $result->classTeacher->c_class->name . ')';
+                // $data[] = sprintf("%01.1f", $result->average);
+                $data[] = [
+                    'x' => $result->subjectTeacher->subject->code . ' (' . $result->classTeacher->c_class->name . ')',
+                    'y' => ($result->average) ?  sprintf("%01.1f", $result->average) : 0.0,
+                ];
+            }
         }
         $series = [[
             'name' => 'Subject Average',

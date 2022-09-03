@@ -24,7 +24,9 @@ use App\Models\ClassAttendance;
 use App\Models\AuditTrail;
 use App\Models\News;
 use App\Models\Event;
+use App\Models\FeePaymentMonitor;
 use App\Models\GroupOfSchool;
+use App\Models\IncomeAndExpense;
 use App\Models\PartnerSchool;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -216,23 +218,41 @@ class DashboardsController extends Controller
         $sess_id = $this->getSession()->id;
         $term_id = $this->getTerm()->id;
         $total_students = Student::ActiveAndSuspended()->where(['school_id' => $school_id])->count();
-        $active_students = Student::ActiveStudentOnly()->where(['school_id' => $school_id])->count();
-        $suspended_students = Student::SuspendedStudentOnly()->where(['school_id' => $school_id])->count();
-        $withdrawn_students = Student::WithdrawnStudentOnly()->where(['school_id' => $school_id])->count();
-        $alumni = Alumni::where(['school_id' => $school_id])->count();
+        // $active_students = Student::ActiveStudentOnly()->where(['school_id' => $school_id])->count();
+        // $suspended_students = Student::SuspendedStudentOnly()->where(['school_id' => $school_id])->count();
+        // $withdrawn_students = Student::WithdrawnStudentOnly()->where(['school_id' => $school_id])->count();
+        // $alumni = Alumni::where(['school_id' => $school_id])->count();
 
-        $active_male = Student::ActiveStudentOnly()->join('users', 'users.id', 'students.user_id')
-            ->where(['students.school_id' => $school_id, 'users.gender' => 'male'])->count();
+        // $active_male = Student::ActiveStudentOnly()->join('users', 'users.id', 'students.user_id')
+        //     ->where(['students.school_id' => $school_id, 'users.gender' => 'male'])->count();
 
-        $active_female = Student::ActiveStudentOnly()->join('users', 'users.id', 'students.user_id')
-            ->where(['students.school_id' => $school_id, 'users.gender' => 'female'])->count();
+        // $active_female = Student::ActiveStudentOnly()->join('users', 'users.id', 'students.user_id')
+        //     ->where(['students.school_id' => $school_id, 'users.gender' => 'female'])->count();
 
         $totalStaff = Staff::where(['school_id' => $school_id])->count();
-        $totalGuardian = Guardian::where('school_id', $school_id)->count();
+        // $totalGuardian = Guardian::where('school_id', $school_id)->count();
+        $population = $total_students + $totalStaff;
+        // $activities = AuditTrail::where('school_id', $school_id)->where('created_at', '>', $today->startOfWeek())->orderBy('id', 'DESC')->get();
+        $income = IncomeAndExpense::selectRaw('SUM(amount) as total_income')
+            ->where('deletable', '0')
+            ->where(['school_id' => $school_id, 'sess_id' => $sess_id, 'status' => 'income'])
+            ->first();
+        $expenses = IncomeAndExpense::selectRaw('SUM(amount) as total_expenses')
+            ->where('deletable', '0')
+            ->where(['school_id' => $school_id, 'sess_id' => $sess_id, 'status' => 'expenses'])
+            ->first();
+        $total_income = ($income->total_income > 0) ?  $this->getCurrency() . number_format($income->total_income, 0) : $this->getCurrency() . '0';
+        $total_expenses = ($expenses->total_expenses > 0) ? $this->getCurrency() . number_format($expenses->total_expenses, 0) : $this->getCurrency() . '0';
+        $debt = FeePaymentMonitor::where([
+            'school_id' => $school_id,
+            'sess_id' => $sess_id,
+        ])
+            ->select(\DB::raw('SUM(total_fee - amount_paid) as total_debt'))
+            ->first();
+        $total_debts = ($debt->total_debt > 0) ? $this->getCurrency() . number_format($debt->total_debt, 0) : $this->getCurrency() . '0';
+        // return $this->render(compact('total_students', 'active_students', 'active_male', 'active_female', 'suspended_students', 'withdrawn_students', 'alumni', 'totalStaff', 'totalGuardian', 'activities', 'user'));
 
-        $activities = AuditTrail::where('school_id', $school_id)->where('created_at', '>', $today->startOfWeek())->orderBy('id', 'DESC')->get();
-
-        return $this->render(compact('total_students', 'active_students', 'active_male', 'active_female', 'suspended_students', 'withdrawn_students', 'alumni', 'totalStaff', 'totalGuardian', 'activities', 'user'));
+        return $this->render(compact('population', 'total_income', 'total_expenses', 'total_debts', 'user'));
     }
 
     public function studentDashboard()
@@ -271,7 +291,7 @@ class DashboardsController extends Controller
         // $teachers = Staff::where('school_id', $this->getSchool()->id)->get();
 
         // $performance = 0;
-        return  response()->json(compact('student', 'subject_teachers', 'performance_data', 'average_performance', 'total_in_class', 'current_class', 'class_teacher'), 200);
+        return  response()->json(compact('student', 'subject_teachers', 'performance_data', 'average_performance', 'total_in_class', 'current_class', 'class_teacher'), 000);
     }
     public function teacherDashboard()
     {

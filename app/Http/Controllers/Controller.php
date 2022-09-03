@@ -329,7 +329,10 @@ class Controller extends BaseController
 
         return $result_settings;
     }
-
+    public function getCurrency()
+    {
+        return $this->currency;
+    }
     public function getSchool()
     {
         return $this->school;
