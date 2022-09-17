@@ -210,10 +210,10 @@ class User extends Authenticatable
         }
         if ($action == 'update') {
 
-            $user_id  = $request->parent_user_id;
-            $user = User::withTrashed()->find($user_id);
+            // $user_id  = $request->parent_user_id;
+            // $user = User::withTrashed()->find($user_id);
             $user->gender = ($request->sponsor_gender) ? $request->sponsor_gender : 'male';
-            $user->photo = photoPath($request->school, ['type' => 'default', 'file' => strtolower($request->gender) . '.png']);
+            // $user->photo = photoPath($request->school, ['type' => 'default', 'file' => strtolower($request->gender) . '.png']);
             //$user->mime = $request->mime;
             $user->first_name = $request->fname;
             $user->last_name = $request->lname;
@@ -277,7 +277,39 @@ class User extends Authenticatable
 
         return array($user->id, 'exists');
     }
-    public function saveUserAsStudent($request, $action = "save")
+    public function updateUserAsStudent($request)
+    {
+        // $uniq_id = $request->parent_user_id;
+        $username = $request->registration_no;
+        $user = User::withTrashed()->where('username', $username)->first();
+        $user->first_name = $request->first_name;
+        $user->last_name = $request->last_name;
+        //generate the student email address
+
+        $user->address = $request->address;
+        $user->lga_id = $request->lga_id;
+        $user->state_id = $request->state_id;
+        $user->country_id = $request->country_id;
+        $user->disablility = $request->disablility;
+
+
+        $user->dob = date('Y-m-d', strtotime($request->dob));
+
+        $user->religion = $request->religion;
+
+
+        $gender = strtolower($request->gender);
+        $user->gender = $gender;
+        if ($gender == 'm' || $gender == 'male') {
+            $user->gender = 'male';
+        } else {
+            $user->gender = 'female';
+        }
+        $user->save();
+
+        return $user->id;
+    }
+    public function saveUserAsStudent($request)
     {
         $uniq_id = $request->parent_user_id;
         $username = $request->username;
@@ -310,44 +342,24 @@ class User extends Authenticatable
 
 
 
+        $this->dob = date('Y-m-d', strtotime($request->dob));
 
+        $this->religion = $request->religion;
 
-        if ($action == 'update') {
-            //this is the students.id from students table
-            $id = $request->student_id;
-            $student = Student::findOrFail($id);
-
-            //get the users.id from the students table
-            $this->id = $student->user_id;
-            $this->dob = date('Y-m-d', strtotime($request->dob));
-            $gender = strtolower($request->gender);
-            if ($gender == 'm' || $gender == 'male') {
-                $this->gender = 'male';
-            } else {
-                $this->gender = 'female';
-            }
-            //retrieve  user fields to perform update action
-            $this->save();
-
-            return $this->id;
+        $gender = strtolower($request->gender);
+        $this->gender = $gender;
+        if ($gender == 'm' || $gender == 'male') {
+            $this->gender = 'male';
         } else {
-            $this->dob = date('Y-m-d', strtotime($request->dob));
-            $this->username = $username;
-            $gender = strtolower($request->gender);
-            if ($gender == 'm' || $gender == 'male') {
-                $this->gender = 'male';
-            } else {
-                $this->gender = 'female';
-            }
-
-            $this->password = $username; //$request->password;
-            $this->role = 'student';
-            $this->password_status = defaultPasswordStatus();
-            $this->religion = $request->religion;
-            $this->save();
-
-            return $this->id;
+            $this->gender = 'female';
         }
+        $this->username = $username;
+        $this->password = $username; //$request->password;
+        $this->role = 'student';
+        $this->password_status = defaultPasswordStatus();
+        $this->save();
+
+        return $this->id;
     }
     public function saveUserAsPartner($request)
     {

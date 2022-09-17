@@ -13,6 +13,7 @@ use App\Models\DailyClassroom;
 use App\Models\DailyClassroomAttendee;
 use App\Models\DailyClassroomMaterial;
 use App\Models\DailyClassroomVideo;
+use App\Models\Staff;
 use App\Models\StudentsInClass;
 use App\Models\SubjectTeacher;
 use App\Models\User;
@@ -26,8 +27,9 @@ class ClassroomsController extends Controller
      * Display a listing of the resource.
      * @return Response
      */
-    public function index()
+    public function index(Request $request)
     {
+
         $user = $this->getUser();
         if ($user->hasRole('admin') || $user->hasRole('proprietor')) {
             return $this->render('lms::classroom.admin');
@@ -48,7 +50,12 @@ class ClassroomsController extends Controller
     {
         $staff = $this->getStaff();
         $school = $this->getSchool();
-        $subject_teachers = SubjectTeacher::with(['dailyClassrooms.materials', 'dailyClassrooms.videos.youtubeVideo', 'routines', 'classTeacher.c_class', 'subject'])->where(['school_id' => $school->id, 'teacher_id' => $staff->id])->get();
+        $subject_teachers = SubjectTeacher::with(['classTeacher.c_class', 'subject'])
+            ->where([
+                'school_id' => $school->id,
+                'teacher_id' => $staff->id,
+            ])
+            ->get();
 
         return response()->json(compact('subject_teachers'), 200);
     }
@@ -56,18 +63,33 @@ class ClassroomsController extends Controller
     public function createdOnlineClassrooms(Request $request)
     {
         set_time_limit(0);
+        $staff = $this->getStaff();
         $school_id = $this->getSchool()->id;
-        $date = todayDate();
-        $today = getDateFormatWords($date);
-        $dateS = Carbon::now()->startOfQuarter(); // ->subMonth(3); // within a term
-        $dateE = Carbon::now()->endOfQuarter();
+        $term_id = $this->getTerm()->id;
+        $sess_id = $this->getSession()->id;
+        $condition = [
+            'school_id' => $school_id,
+            'sess_id' => $sess_id,
+            'term_id' => $term_id,
+            'staff_id' => $staff->id,
+        ];
+        if (isset($request->subject_teacher_id) && $request->subject_teacher_id !== 'upcoming') {
 
-
-        if (isset($request->option) && $request->option == 'yes') {
-            $daily_classrooms = DailyClassroom::with(['materials', 'posts', 'subjectTeacher.subject', 'subjectTeacher.classTeacher.c_class', 'subjectTeacher.staff.user'])->where(['school_id' => $school_id])->whereBetween('created_at', [$dateS, $dateE])->orderBy('date', 'DESC')->get();
-        } else {
-            $daily_classrooms = DailyClassroom::with(['materials', 'videos.youtubeVideo', 'posts', 'subjectTeacher.subject', 'subjectTeacher.classTeacher.c_class', 'subjectTeacher.staff.user'])->where(['school_id' => $school_id, 'date' => $today])->orderBy('date', 'DESC')->get();
+            $condition['subject_teacher_id'] = $request->subject_teacher_id;
         }
+        // $date = todayDate();
+        // $today = getDateFormatWords($date);
+        // $dateS = Carbon::now()->startOfQuarter(); // ->subMonth(3); // within a term
+        // $dateE = Carbon::now()->endOfQuarter();
+        $daily_classrooms = DailyClassroom::with(['subjectTeacher.subject', 'subjectTeacher.classTeacher.c_class', 'subjectTeacher.staff.user'])
+            ->where($condition)
+            ->orderBy('date')->get();
+
+        // if (isset($request->option) && $request->option == 'yes') {
+        //     $daily_classrooms = DailyClassroom::with(['materials', 'posts', 'subjectTeacher.subject', 'subjectTeacher.classTeacher.c_class', 'subjectTeacher.staff.user'])->where(['school_id' => $school_id])->whereBetween('created_at', [$dateS, $dateE])->orderBy('date', 'DESC')->get();
+        // } else {
+        //     $daily_classrooms = DailyClassroom::with(['materials', 'videos.youtubeVideo', 'posts', 'subjectTeacher.subject', 'subjectTeacher.classTeacher.c_class', 'subjectTeacher.staff.user'])->where(['school_id' => $school_id, 'date' => $today])->orderBy('date', 'DESC')->get();
+        // }
 
 
         return response()->json(compact('daily_classrooms'), 200);
@@ -87,18 +109,22 @@ class ClassroomsController extends Controller
             //'term_id'=>$term_id,
         ])->first();
         $date = todayDate();
-        $today = getDateFormatWords($date);
         $class_teacher_id = $student_in_class->class_teacher_id;
         $dateS = Carbon::now()->startOfQuarter(); //->subMonth(4); // within a term
         $dateE = Carbon::now()->endOfQuarter();
 
-
-        if (isset($request->option) && $request->option == 'yes') {
-            $daily_classrooms = DailyClassroom::with(['materials', 'videos.youtubeVideo', 'posts', 'subjectTeacher.subject', 'subjectTeacher.staff.user'])->where(['school_id' => $school_id, 'class_teacher_id' => $class_teacher_id])->orderBy('date', 'DESC')->whereBetween('created_at', [$dateS, $dateE])->get();
-        } else {
-            $daily_classrooms = DailyClassroom::with(['materials', 'videos.youtubeVideo', 'posts', 'subjectTeacher.subject', 'subjectTeacher.staff.user'])->where(['school_id' => $school_id, 'class_teacher_id' => $class_teacher_id, 'date' => $today])->orderBy('date', 'DESC')->get();
+        $condition = [
+            'school_id' => $school_id,
+            'sess_id' => $sess_id,
+            'term_id' => $term_id,
+            'class_teacher_id' => $class_teacher_id
+        ];
+        if (isset($request->option) && $request->option == 'no') {
+            $condition['date'] = $date;
         }
-
+        $daily_classrooms = DailyClassroom::with(['subjectTeacher.subject', 'subjectTeacher.classTeacher.c_class', 'subjectTeacher.staff.user'])
+            ->where($condition)
+            ->orderBy('date')->get();
         return response()->json(compact('daily_classrooms'), 200);
     }
 
@@ -112,32 +138,36 @@ class ClassroomsController extends Controller
     {
         $staff = $this->getStaff();
         $school = $this->getSchool();
+        $sess_id = $this->getSession()->id;
+        $term_id = $this->getTerm()->id;
         $class_teacher_id = $request->class_teacher_id;
         $subject_teacher_id = $request->subject_teacher_id;
         $subject_teacher = SubjectTeacher::with(['subject', 'classTeacher.c_class'])->find($subject_teacher_id);
 
-        $day = $request->day;
-        $routine = Routine::where(['school_id' => $school->id, /*'teacher_id' => $staff->id,*/ 'class_teacher_id' => $class_teacher_id, 'subject_teacher_id' => $subject_teacher_id, 'day' => $day])->first();
-        $routine->teacher_id = $staff->id;
-        $routine->save();
-        $end = strtotime($routine->end);
-        $start = strtotime($routine->start);
+        // $day = $request->day;
+        // $routine = Routine::where(['school_id' => $school->id, /*'teacher_id' => $staff->id,*/ 'class_teacher_id' => $class_teacher_id, 'subject_teacher_id' => $subject_teacher_id, 'day' => $day])->first();
+        // $routine->teacher_id = $staff->id;
+        // $routine->save();
+        $end = strtotime($request->end);
+        $start = strtotime($request->start);
         $duration = ($end - $start) / 60; //in minutes
 
         $daily_classroom = new DailyClassroom();
         $daily_classroom->school_id = $school->id;
+        $daily_classroom->staff_id = $staff->id;
+        $daily_classroom->sess_id = $sess_id;
+        $daily_classroom->term_id = $term_id;
         $daily_classroom->class_teacher_id = $class_teacher_id;
         $daily_classroom->subject_teacher_id = $subject_teacher_id;
         $daily_classroom->topic = $request->topic;
         $daily_classroom->description = $request->description;
         $daily_classroom->duration = $duration;
-        $daily_classroom->end = $routine->end;
-        $daily_classroom->start = $routine->start;
-        $daily_classroom->date = getDateFormatWords($request->date);
+        $daily_classroom->end = $request->end;
+        $daily_classroom->start = $request->start;
+        $daily_classroom->date = getDateFormat($request->date);
         if ($daily_classroom->save()) {
 
             $request->class_teacher_id = $class_teacher_id;
-            //we dont want to record save events...intead we want submit,approve, publish, disapprove etc
             $event_action = "Scheduled an online classroom to hold on " . $daily_classroom->date . " for students offering" . $subject_teacher->subject->name . " in " . $subject_teacher->classTeacher->c_class->name;
 
             $this->teacherStudentEventTrail($request, $event_action, 'class');
@@ -312,8 +342,10 @@ class ClassroomsController extends Controller
      * @param  Request $request
      * @return Response
      */
-    public function update(Request $request)
+    public function updateClassMeetingLink(Request $request, Staff $staff)
     {
+        $staff->online_class_meeting_link = $request->online_class_meeting_link;
+        $staff->save();
     }
 
     /**

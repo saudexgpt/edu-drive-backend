@@ -81,13 +81,13 @@ class MaterialsController extends Controller
         $teacher_id = $this->getStaff()->id;
         $inputs = $request->all();
         $extension = $request->file('material')->guessClientExtension();
-        if ($extension == 'doc' || $extension == 'docx' || $extension == 'pdf') {
+        if (/*$extension == 'doc' || $extension == 'docx' ||*/$extension == 'pdf') {
             $name = "material_" . time();
             $ext_name = "material_" . time() . "." . $extension;
             $unconverted_file = $request->file('material')->storeAs($folder, $ext_name, 'public');
-            $file = $this->convertDocToPDF($unconverted_file, $folder, $name, $extension);
+            // $file = $this->convertDocToPDF($unconverted_file, $folder, $name, $extension);
             $inputs['title'] = $title;
-            $inputs['material'] = $file;
+            $inputs['material'] = $unconverted_file; //$file;
             $inputs['teacher_id'] = $teacher_id;
             $inputs['school_id'] = $this->getSchool()->id;
             $inputs['subject_teacher_id'] = $subject_teacher_id;
@@ -95,7 +95,7 @@ class MaterialsController extends Controller
 
             return response()->json([], 200);
         }
-        return response()->json(['message' => 'Invalid FIle Type'], 500);
+        return response()->json(['message' => 'Only PDF files are needed'], 500);
     }
     private function convertDocToPDF($file, $folder, $name, $extension)
     {

@@ -299,6 +299,8 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
         Route::get('quiz', [QuizController::class, 'quiz']);
         Route::get('quiz-dashboard', [QuizController::class, 'quizDashboard']);
         Route::get('subject-teachers', [QuizController::class, 'subjectTeachers']);
+        Route::get('fetch-questions-bank/{subject_teacher}', [QuizController::class, 'fetchQuestionBank']);
+
         Route::get('student-quizzes', [QuizController::class, 'studentQuizzes']);
 
         Route::post('store-question', [QuizController::class, 'storeQuestion']);
@@ -315,6 +317,8 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
 
 
         Route::get('classroom', [ClassroomsController::class, 'index']);
+        // Route::get('scheduled-online-class', [ClassroomsController::class, 'scheduledOnlineClass']);
+
         Route::get('teacher-routine', [ClassroomsController::class, 'teacherRoutine']);
 
         Route::post('create-online-class', [ClassroomsController::class, 'store']);
@@ -338,6 +342,7 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
         Route::get('student-routine', [ClassroomsController::class, 'studentRoutine']);
 
         Route::get('created-online-classrooms', [ClassroomsController::class, 'createdOnlineClassrooms']);
+        Route::put('update-meeting-link/{staff}', [ClassroomsController::class, 'updateClassMeetingLink']);
     });
 
     Route::group(['prefix' => 'packages'], function () {
@@ -374,6 +379,8 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
         Route::post('record-result', [ResultsController::class, 'recordResult']);
         Route::post('normalize-result', [ResultsController::class, 'normalizeResult']);
 
+        Route::post('record-cbt-score', [ResultsController::class, 'recordCbtScore']);
+
         Route::post('result-action', [ResultsController::class, 'resultAction']);
         Route::post('upload-bulk-result', [ResultsController::class, 'uploadBulkResult']);
         Route::get('get-recorded-result', [ResultsController::class, 'getRecordedResultForApproval']);
@@ -382,8 +389,6 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
         Route::get('give-student-remark', [ResultsController::class, 'giveStudentRemark']);
         Route::get('fetch-result-display-settings', [ResultDisplaySettingsController::class, 'index']);
         Route::post('update-result-display-settings', [ResultDisplaySettingsController::class, 'update']);
-
-
         // Route::post('level-group/save', [CurriculumCategoryController::class, 'storeCurriculumLevelGroup']);
         // Route::post('level/save', [CurriculumCategoryController::class, 'storeCurriculumLevel']);
 
@@ -485,6 +490,8 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
         Route::delete('destroy/{routine}', [RoutinesController::class, 'destroy']);
         Route::get('student/class-time-table', [RoutinesController::class, 'classTimeTable']);
         Route::get('teacher/time-table', [RoutinesController::class, 'teacherTimeTable']);
+        Route::get('teacher/time-table-app', [RoutinesController::class, 'teacherTimeTableApp']);
+
         //Route::get('fetch-level', 'AttendanceController@fetchLevelAttendanceChart');
 
 

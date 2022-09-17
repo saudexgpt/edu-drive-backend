@@ -13,6 +13,7 @@ use App\Models\Staff;
 use App\Models\Teacher;
 use App\Models\SubjectTeacher;
 use App\Models\ClassTeacher;
+use App\Models\QuizCompilation;
 use App\Models\StudentsInClass;
 use App\Models\Term;
 use App\Models\SSession;
@@ -475,13 +476,47 @@ class ResultsController extends Controller
             }
         endforeach;
     }
+    public function recordCbtScore(Request $request)
+    {
+        // return $request;
+        // $school_id = $this->getSchool()->id;
+        // $assessment = $request->assessment;
+        $quiz_attempts = $request->quiz_attempts;
+        $quiz_compilation_id = $quiz_attempts[0]['quiz_compilation_id'];
+        $compilation = QuizCompilation::find($quiz_compilation_id);
+        // $limit = $compilation->point; // get quiz limit
+
+        $request->subject_teacher_id = $compilation->subject_teacher_id;
+
+        $subject_teacher = SubjectTeacher::find($request->subject_teacher_id);
+        $class_teacher = $subject_teacher->classTeacher;
+        $curriculum_level_group_id = $class_teacher->level->curriculum_level_group_id;
+
+        $result_settings = $this->getResultSettings($curriculum_level_group_id);
+        $label = $request->assessment; //e.g ca1,ca2,ca3,exam,comments, behavior, effort
+        $max_score_limit = $result_settings->$label;
+
+        $request->teacher_id = $compilation->teacher_id;
+        $request->class_teacher_id = $compilation->subjectTeacher->class_teacher_id;
+        $request->sess_id = $compilation->sess_id;
+        $request->term_id = $compilation->term_id;
+        foreach ($quiz_attempts as $quiz_attempt) {
+            // $quiz_compilation_id = $quiz_attempt['quiz_compilation_id'];
+            $request->score = $quiz_attempt['percent_score'] * $max_score_limit / 100;
+            $request->student_id = $quiz_attempt['student_id'];
+            //check whether any record exits for this subject and student if not create one
+            $this->recordResult($request);
+        }
+        return 'success';
+    }
     /**
      * Show the form for creating a new resource.
      *
      * @return \Illuminate\Http\Response
      */
-    public function recordResult(Result $result, Request $request)
+    public function recordResult(Request $request)
     {
+        $result = new Result;
         //
         // return $request;
         $subject_teacher_id = $request->subject_teacher_id;

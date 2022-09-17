@@ -380,9 +380,9 @@ class StudentsController extends Controller
     {
         // return $request;
 
-        $student_in_class = StudentsInClass::with(['student.studentGuardian.guardian.user', 'student.user'])->find($student_in_class->id);
+        $student_in_class = StudentsInClass::with(['student.studentGuardian.guardian.user'])->find($student_in_class->id);
         $student = $student_in_class->student;
-        $student_user = $student->user;
+        $student_user = User::withTrashed()->find($student->user_id);
         $student_guardian = $student->studentGuardian;
         $guardian = $student_guardian->guardian;
         $guardian_user = User::withTrashed()->find($guardian->user_id);
@@ -391,7 +391,8 @@ class StudentsController extends Controller
         try {
             // update student details
             $student->saveStudentInfo($request, 'update');
-            $student_user->saveUserAsStudent($request, 'update');
+            // $request->student_user_id = $student->user_id;
+            $student_user->updateUserAsStudent($request);
 
             // update parent info
 

@@ -291,7 +291,7 @@ class DashboardsController extends Controller
         // $teachers = Staff::where('school_id', $this->getSchool()->id)->get();
 
         // $performance = 0;
-        return  response()->json(compact('student', 'subject_teachers', 'performance_data', 'average_performance', 'total_in_class', 'current_class', 'class_teacher'), 000);
+        return  response()->json(compact('student', 'subject_teachers', 'performance_data', 'average_performance', 'total_in_class', 'current_class', 'class_teacher'));
     }
     public function teacherDashboard()
     {

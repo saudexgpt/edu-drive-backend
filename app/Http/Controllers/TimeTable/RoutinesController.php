@@ -162,12 +162,19 @@ class RoutinesController extends Controller
 
     public function teacherTimeTable()
     {
-        $id = $this->getStaff()->id;
+        $staff = $this->getStaff();
         $routine_obj = new Routine();
 
-        $routines =  $routine_obj->timeTable($id);
+        $routines =  $routine_obj->timeTable($staff->id);
         //$routines = $this->fetchRoutine($class_teacher_id, $options);
-        return $this->render(compact('routines'));
+        return $this->render(compact('routines', 'staff'));
+    }
+    public function teacherTimeTableApp()
+    {
+        $staff = $this->getStaff();
+        $subject_teachers = SubjectTeacher::where('teacher_id', $staff->id)->pluck('id');
+        $routines = Routine::with('subjectTeacher.staff.user', 'subjectTeacher.subject', 'subjectTeacher.classTeacher.c_class')->whereIn('subject_teacher_id', $subject_teachers)->orderBy('start')->get()->groupBy('day');
+        return $this->render(compact('routines', 'staff'));
     }
 
     public function classTimeTable()
@@ -188,7 +195,7 @@ class RoutinesController extends Controller
         $student_in_class = $student_in_class_obj->fetchStudentInClass($student_id,  $sess_id, $term_id, $school_id);
 
         $id = $student_in_class->class_teacher_id;
-        $routines = Routine::with('subjectTeacher.staff.user', 'subjectTeacher.subject')->where('class_teacher_id', $id)->get();
+        $routines = Routine::with('subjectTeacher.staff.user', 'subjectTeacher.subject', 'subjectTeacher.classTeacher.c_class')->where('class_teacher_id', $id)->get();
         // $options = [];
         // //$events = [];
         // foreach ($data as $record) :

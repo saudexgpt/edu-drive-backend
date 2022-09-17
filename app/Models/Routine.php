@@ -35,18 +35,19 @@ class Routine extends Model
     public function timeTable($id)
     {
         $options = [];
-        $subject_teachers = SubjectTeacher::where('teacher_id', $id)->get();
-        foreach ($subject_teachers as $subject_teacher) :
-            $subject_teacher_id = $subject_teacher->id;
-            $routines = Routine::with('subjectTeacher.staff.user', 'subjectTeacher.subject', 'subjectTeacher.classTeacher.c_class')->where('subject_teacher_id', $subject_teacher_id)->get();
-            //$events = [];
+        $subject_teachers = SubjectTeacher::where('teacher_id', $id)->pluck('id');
+        $routines = Routine::with('subjectTeacher.staff.user', 'subjectTeacher.subject', 'subjectTeacher.classTeacher.c_class')->whereIn('subject_teacher_id', $subject_teachers)->get();
+        // foreach ($subject_teachers as $subject_teacher) :
+        //     $subject_teacher_id = $subject_teacher->id;
+        //     $routines = Routine::with('subjectTeacher.staff.user', 'subjectTeacher.subject', 'subjectTeacher.classTeacher.c_class')->where('subject_teacher_id', $subject_teacher_id)->get();
+        //     //$events = [];
 
-            foreach ($routines as $routine) {
-                $options[] =  $routine;
-            }
-        //$options[] = $events;
-        endforeach;
+        //     foreach ($routines as $routine) {
+        //         $options[] =  $routine;
+        //     }
+        // //$options[] = $events;
+        // endforeach;
 
-        return $options;
+        return $routines;
     }
 }

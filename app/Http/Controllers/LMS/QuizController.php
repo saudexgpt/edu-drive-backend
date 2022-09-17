@@ -37,26 +37,28 @@ class QuizController extends Controller
 
         return $this->render('lms::index');
     }
-    public function studentQuizzes()
+    public function studentQuizzes(Request $request)
     {
         $sess_id = $this->getSession()->id;
         $term_id = $this->getTerm()->id;
         $school_id = $this->getSchool()->id;
         $student = $this->getStudent();
-        $student_in_class = StudentsInClass::where([
-            'school_id' => $school_id,
-            'sess_id' => $sess_id,
-            'student_id' => $student->id,
-            //'term_id'=>$term_id,
-        ])->first();
-        $class_teacher_id = $student_in_class->class_teacher_id;
-        $subject_teachers = SubjectTeacher::with(['subject', 'classTeacher.c_class', 'quizCompilations' => function ($query) use ($sess_id, $term_id) {
-            return $query->where(['term_id' => $term_id, 'sess_id' => $sess_id])->where('status', 'Active')->with([
-                'quizzes.question', 'quizzes.theoryQuestion', 'subjectTeacher.subject', 'subjectTeacher.classTeacher.c_class'
-            ]);
-        }])->where(['school_id' => $school_id, 'class_teacher_id' => $class_teacher_id])->get();
+        $exam_id = $request->exam_id;
+        $exam_code = $request->exam_code;
+        $quiz_compilation = QuizCompilation::with([
+            'quizzes.question',
+            'quizzes.theoryQuestion',
+            'subjectTeacher.subject',
+            'subjectTeacher.classTeacher.c_class'
+        ])
+            ->where(['term_id' => $term_id, 'sess_id' => $sess_id])
+            ->where('status', 'Active')
+            ->where('exam_code', $exam_code)->find($exam_id);
+        if ($quiz_compilation) {
+            return response()->json(compact('quiz_compilation'), 200);
+        }
 
-        return response()->json(compact('subject_teachers'), 200);
+        return response()->json(['message' => 'Invalid Entries'], 404);
     }
     public function quizDashboard(Request $request)
     {
@@ -116,13 +118,30 @@ class QuizController extends Controller
             $teacher = $this->getStaff();
 
             // $subject_teachers = SubjectTeacher::with(['subject', 'classTeacher.c_class', 'questions', 'theoryQuestions', 'quizCompilations.quizzes', 'quizCompilations.quizAttempts.quizAnswers.question', 'quizCompilations.quizAttempts.quizAnswers.theoryQuestion',  'quizCompilations.quizAttempts.student.user'])->where('teacher_id', $teacher->id)->get();
-            $subject_teachers = SubjectTeacher::with(['subject', 'classTeacher.c_class', 'questions', 'theoryQuestions', /*'quizCompilations.quizzes',*/ 'quizCompilations' => function ($query) use ($sess_id, $term_id) {
-                return $query->where(['term_id' => $term_id, 'sess_id' => $sess_id])->with([
-                    'quizzes', 'quizAttempts.quizAnswers.question', 'quizAttempts.quizAnswers.theoryQuestion', 'quizAttempts.student.user'
-                ]);
-            }])->where(['teacher_id' => $teacher->id, 'school_id' => $school_id])->get();
+            // $subject_teachers = SubjectTeacher::with(['subject', 'classTeacher.c_class', 'questions', 'theoryQuestions', /*'quizCompilations.quizzes',*/ 'quizCompilations' => function ($query) use ($sess_id, $term_id) {
+            //     return $query->where(['term_id' => $term_id, 'sess_id' => $sess_id])->with([
+            //         'quizzes', 'quizAttempts.quizAnswers.question', 'quizAttempts.quizAnswers.theoryQuestion', 'quizAttempts.student.user'
+            //     ]);
+            // }])->where(['teacher_id' => $teacher->id, 'school_id' => $school_id])->get();
+            $subject_teachers = SubjectTeacher::with(['subject', 'classTeacher.c_class'])
+                ->where(['teacher_id' => $teacher->id, 'school_id' => $school_id])
+                ->get();
             return response()->json(compact('subject_teachers'), 200);
         }
+    }
+    public function fetchQuestionBank(Request $request, SubjectTeacher $subject_teacher)
+    {
+        $school_id = $this->getSchool()->id;
+        $sess_id = $this->getSession()->id;
+        $term_id = $this->getTerm()->id;
+        $subject_teacher = $subject_teacher->with(['subject', 'classTeacher.c_class', 'questions', 'theoryQuestions', 'quizCompilations' => function ($query) use ($sess_id, $term_id) {
+            return $query->where(['term_id' => $term_id, 'sess_id' => $sess_id])->with([
+                'quizzes', 'quizAttempts.quizAnswers.question', 'quizAttempts.quizAnswers.theoryQuestion', 'quizAttempts.student.user'
+            ]);
+        }, 'classTeacher.level.levelGroup.resultSetting' => function ($q) use ($school_id) {
+            return $q->where('school_id', $school_id);
+        }])->find($subject_teacher->id);
+        return response()->json(compact('subject_teacher'), 200);
     }
     public function attemptQuiz(Request $request)
     {
@@ -315,6 +334,7 @@ class QuizController extends Controller
         $compilation->duration = $request->duration;
         $compilation->point = $request->point;
         $compilation->status = $request->status;
+        $compilation->exam_code = randomcode();
         $compilation->save();
 
         return $compilation;

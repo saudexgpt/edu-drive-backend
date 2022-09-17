@@ -326,12 +326,44 @@ class ClassesController extends Controller
 
     public function classTeacherClasses()
     {
+        $sess_id = $this->getSession()->id;
+        $term_id = $this->getTerm()->id;
         $teacher = new Teacher();
 
         $staff = $this->getStaff();
 
         $school_id = $this->getSchool()->id;
-        $class_teachers = $teacher->teacherClasses($staff->id, $school_id);
+        // $class_teachers = $teacher->teacherClasses($staff->id, $school_id);
+        // $students_in_class = StudentsInClass::with([
+        //     'classTeacher.subjectTeachers.subject',
+        //     'classTeacher.c_class',
+        //     'student' => function ($query) {
+        //         $query->ActiveAndSuspended();
+        //     },
+        //     'student.studentGuardian.guardian.user', 'student.user', 'classTeacher.c_class', 'student.behavior' => function ($q) use ($school_id, $sess_id, $term_id) {
+        //         $q->where(['school_id' => $school_id, 'sess_id' => $sess_id, 'term_id' => $term_id]);
+        //     }, 'student.skill' => function ($q) use ($school_id, $sess_id, $term_id) {
+        //         $q->where(['school_id' => $school_id, 'sess_id' => $sess_id, 'term_id' => $term_id]);
+        //     },
+        // ])->where([
+        //     'class_teacher_id' => $class_teacher_id,
+        //     'school_id' => $school_id,
+        //     'sess_id' => $sess_id,
+        // ])->get();
+        $class_teachers = ClassTeacher::with(['level', 'c_class', 'studentsInClass' => function ($q) use ($school_id, $sess_id, $term_id) {
+            $q->with([
+                'classTeacher.subjectTeachers.subject',
+                'classTeacher.c_class',
+                'student' => function ($query) {
+                    $query->ActiveAndSuspended();
+                },
+                'student.studentGuardian.guardian.user', 'student.user', 'classTeacher.c_class', 'student.behavior' => function ($q) use ($school_id, $sess_id, $term_id) {
+                    $q->where(['school_id' => $school_id, 'sess_id' => $sess_id, 'term_id' => $term_id]);
+                }, 'student.skill' => function ($q) use ($school_id, $sess_id, $term_id) {
+                    $q->where(['school_id' => $school_id, 'sess_id' => $sess_id, 'term_id' => $term_id]);
+                },
+            ]);
+        }])->where(['teacher_id' => $staff->id, 'school_id' => $school_id])->get();
         $teacher = $staff->user->first_name . ' ' . $staff->user->last_name;
         return $this->render(compact('class_teachers', 'teacher'));
     }

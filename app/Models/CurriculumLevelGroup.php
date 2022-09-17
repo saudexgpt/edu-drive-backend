@@ -31,4 +31,8 @@ class CurriculumLevelGroup extends Model
     {
         return $this->belongsTo(CurriculumCategory::class, 'curriculum_category_id', 'id');
     }
+    public function resultSetting()
+    {
+        return $this->hasOne(ResultDisplaySetting::class, 'curriculum_level_group_id', 'id');
+    }
 }
