@@ -370,27 +370,28 @@ class SubjectsController extends Controller
 
     public function destroy(Request $request, Subject $subject)
     {
-        $school_id = $this->getSchool()->id;
-        $curriculum_level_group_id = $subject->curriculum_level_group_id;
-        $subject_teachers = SubjectTeacher::where(['school_id' => $school_id, 'subject_id' => $subject->id])->pluck('id');
-        // delete results with this subject
-        Result::where('school_id', $school_id)->whereIn('subject_teacher_id', $subject_teachers)->delete();
-        ResultAction::where('school_id', $school_id)->whereIn('subject_teacher_id', $subject_teachers)->delete();
-        Assignment::where('school_id', $school_id)->whereIn('subject_teacher_id', $subject_teachers)->delete();
+        return response()->json(['message' => 'Subject deletion is disabled'], 500);
+        // $school_id = $this->getSchool()->id;
+        // $curriculum_level_group_id = $subject->curriculum_level_group_id;
+        // $subject_teachers = SubjectTeacher::where(['school_id' => $school_id, 'subject_id' => $subject->id])->pluck('id');
+        // // delete results with this subject
+        // Result::where('school_id', $school_id)->whereIn('subject_teacher_id', $subject_teachers)->delete();
+        // ResultAction::where('school_id', $school_id)->whereIn('subject_teacher_id', $subject_teachers)->delete();
+        // Assignment::where('school_id', $school_id)->whereIn('subject_teacher_id', $subject_teachers)->delete();
 
-        SubjectAttendance::where('school_id', $school_id)->whereIn('subject_teacher_id', $subject_teachers)->delete();
+        // SubjectAttendance::where('school_id', $school_id)->whereIn('subject_teacher_id', $subject_teachers)->delete();
 
-        StudentsOfferingSubject::where('school_id', $school_id)->whereIn('subject_teacher_id', $subject_teachers)->delete();
+        // StudentsOfferingSubject::where('school_id', $school_id)->whereIn('subject_teacher_id', $subject_teachers)->delete();
 
-        // foreach ($results as $result) {
-        //     $result->delete();
-        // }
-        // delete subject assigned to this
-        SubjectTeacher::where(['school_id' => $school_id, 'subject_id' => $subject->id])->delete();
-        $subject->delete();
+        // // foreach ($results as $result) {
+        // //     $result->delete();
+        // // }
+        // // delete subject assigned to this
+        // SubjectTeacher::where(['school_id' => $school_id, 'subject_id' => $subject->id])->delete();
+        // $subject->delete();
 
-        $subjects = Subject::where(['school_id' => $school_id, 'curriculum_level_group_id' => $curriculum_level_group_id])->orderBy('id', 'DESC')->get();
+        // $subjects = Subject::where(['school_id' => $school_id, 'curriculum_level_group_id' => $curriculum_level_group_id])->orderBy('id', 'DESC')->get();
 
-        return response()->json(compact('subjects'), 200);
+        // return response()->json(compact('subjects'), 200);
     }
 }
