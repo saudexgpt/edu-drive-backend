@@ -67,7 +67,7 @@ class AttendanceController extends Controller
         $day_of_week = date('l', strtotime($toDate));
         $date_in_words = 'Take Attendance for ' . getDateFormatWords($toDate);
         $month_and_year = 'Attendance for ' . date('F, Y', strtotime($toDate));
-        $no_of_days_in_month = cal_days_in_month(CAL_GREGORIAN, $month, $year);
+        $no_of_days_in_month = date('t', mktime(0, 0, 0, $month, 1, $year));  // cal_days_in_month(CAL_GREGORIAN, $month, $year);
 
 
 
@@ -125,7 +125,7 @@ class AttendanceController extends Controller
         $day_of_week = date('l', strtotime($toDate));
         $date_in_words = 'Take Attendance for ' . getDateFormatWords($toDate);
         $month_and_year = 'Attendance for ' . date('F, Y', strtotime($toDate));
-        $no_of_days_in_month = cal_days_in_month(CAL_GREGORIAN, $month, $year);
+        $no_of_days_in_month = date('t', mktime(0, 0, 0, $month, 1, $year)); //  cal_days_in_month(CAL_GREGORIAN, $month, $year);
 
 
 
