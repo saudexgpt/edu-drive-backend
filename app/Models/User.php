@@ -148,7 +148,7 @@ class User extends Authenticatable
         }
         return array($user, 'exists');
     }
-    public function saveUserAsStaff($request)
+    public function saveUserAsStaff($request, $confirmed = '1')
     {
         $email = $request->email;
         $username = $request->username;
@@ -165,6 +165,12 @@ class User extends Authenticatable
             $this->gender = $request->gender;
             $this->username = $username;
             $this->religion = $request->religion;
+
+            $this->lga_id = $request->lga_id;
+            $this->state_id = $request->state_id;
+            $this->country_id = $request->country_id;
+            $this->dob = $request->dob;
+
             $photo_name = photoPath($this->school, ['type' => 'default', 'file' => strtolower($request->gender) . '.png']);
             $mime = $request->mime;
             if ($request->file('photo') != null && $request->file('photo')->isValid()) {
@@ -177,6 +183,7 @@ class User extends Authenticatable
             $this->photo = $photo_name;
             $this->mime = $mime;
             $this->password_status = defaultPasswordStatus(); //'custom';
+            $this->is_confirmed = $confirmed;
             $this->save();
 
             return $this;
@@ -309,7 +316,7 @@ class User extends Authenticatable
 
         return $user->id;
     }
-    public function saveUserAsStudent($request)
+    public function saveUserAsStudent($request, $confirmed = '1')
     {
         $uniq_id = $request->parent_user_id;
         $username = $request->username;
@@ -353,6 +360,7 @@ class User extends Authenticatable
         } else {
             $this->gender = 'female';
         }
+        $this->is_confirmed = $confirmed;
         $this->username = $username;
         $this->password = $username; //$request->password;
         $this->role = 'student';

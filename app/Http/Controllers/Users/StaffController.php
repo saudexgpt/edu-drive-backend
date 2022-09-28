@@ -7,6 +7,7 @@ use App\Models\Country;
 use Illuminate\Http\Request;
 
 use App\Models\GroupOfSchool;
+use App\Models\RegistrationPin;
 use App\Models\Result;
 use App\Models\Role;
 use App\Models\School;
@@ -30,9 +31,12 @@ class StaffController extends Controller
     public function index()
     {
         $school = $this->getSchool();
-        $staff = Staff::with(['user.roles', 'user.country.states.lgas', 'user.state.lgas', 'user.lga'])->where('school_id', $school->id)->get();
+        $staff = Staff::with(['user.roles', 'user.country.states.lgas', 'user.state', 'user.lga'])->where('school_id', $school->id)->get();
         foreach ($staff as $each_staff) {
-            $each_staff->user->permissions = $each_staff->user->allPermissions();
+            if ($each_staff->user) {
+
+                $each_staff->user->permissions = $each_staff->user->allPermissions();
+            }
         }
 
         return $this->render(compact('staff'));
@@ -49,15 +53,20 @@ class StaffController extends Controller
     /**
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
      */
-    public function create(User $user)
+    public function create(Request $request)
     {
-        $school_id = $this->getSchool()->id;
+        if (isset($request->school_id) && $request->school_id !== '') {
+            $school_id = $request->school_id;
+        } else {
+
+            $school_id = $this->getSchool()->id;
+        }
         $username = $this->generateUsername($school_id, 'staff');
         $countries = Country::with('states.lgas')->orderBy('country_name')->get();
         $selected_country = Country::with('states.lgas')->where('country_name', 'Nigeria')->first();
 
         $staff_roles = Role::where('role_type', 'staff')->whereIn('school_id', [0, $school_id])->get();
-        return $this->render(compact('username', 'countries', 'selected_country', 'staff_roles'));
+        return response()->json(compact('username', 'countries', 'selected_country', 'staff_roles'));
     }
 
     /**
@@ -95,6 +104,46 @@ class StaffController extends Controller
         return redirect()->route('staff.index');
     }
 
+    public function storeWithPin(Request $request, Staff $staff,  User $user)
+    {
+        // return $request;
+        // Create staff account
+        // $request->school_id = $this->getSchool()->id;
+        $school_id = $request->school_id;
+        try {
+            $request->username = $this->generateUsername($school_id, 'staff');
+            $saved_user = $user->saveUserAsStaff($request, '0'); // the second parameter is the confirmation status '0' means yet to be confirmed/approved
+            $request->user_id = $saved_user->id;
+            // asssign the roles to the user
+            $saved_user->syncRoles([$request->roles]);
+            $staff_id = $staff->registerStaff($request);
+            // $staff_role_obj = new StaffRole();
+            // $staff_role_obj->addStaffRole($staff_id, $request->school_id, $request->roles);
+            $this->updateUniqNumDb($school_id, 'staff');
+
+            // $action = "Registered " . $request->first_name . " " . $request->last_name . " as new staff";
+            // $this->auditTrailEvent($request, $action);
+            //$new_user = User::find($request->student_user_id);
+            //$all_staff = User::where('role', 'staff')->get();
+            //$user->notify(new NewRegistration($user));
+            //Notification::send($all_staff, new NewRegistration($new_user));
+
+            // change Registration pin status to used
+            // $registrationPin = RegistrationPin::find($request->pin_id);
+            // if ($registrationPin) {
+
+            //     $registrationPin->status = 'used';
+            //     $registrationPin->save();
+            // }
+            return 'Successful';
+
+            // Flash::success('Staff information added successfully');
+        } catch (ModelNotFoundException $ex) {
+            // Flash::error('Error: ' . $ex->getMessage());
+        }
+        return redirect()->route('staff.index');
+    }
+
     /**
      * @param $id
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\Http\RedirectResponse|\Illuminate\View\View
@@ -118,7 +167,7 @@ class StaffController extends Controller
      */
     public function update(Request $request, Staff $staff)
     {
-        $user = $this->getUser()->id;
+        // $user = $this->getUser()->id;
 
         try {
 
@@ -140,6 +189,7 @@ class StaffController extends Controller
             $staff_user->lga_id = $request->lga_id;
             $staff_user->state_id = $request->state_id;
             $staff_user->country_id = $request->country_id;
+            $staff_user->dob = $request->dob;
             $staff_user->save();
 
             return response()->json(compact('staff_user'), 200);

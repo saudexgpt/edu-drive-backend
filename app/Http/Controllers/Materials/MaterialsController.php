@@ -118,12 +118,20 @@ class MaterialsController extends Controller
     }
     public function subjectMaterials(SubjectTeacher $subject_teacher)
     {
-        $materials = Material::with(['subjectTeacher.subject', 'teacher', 'subjectTeacher.classTeacher.c_class'])->where('subject_teacher_id', $subject_teacher->id)->get();
+        $user = $this->getUser();
+        if ($user->role === 'student') {
+            $materials = Material::with(['subjectTeacher.subject', 'teacher', 'subjectTeacher.classTeacher.c_class'])->where('status', 'active')->where('subject_teacher_id', $subject_teacher->id)->get();
+        } else {
+            $materials = Material::with(['subjectTeacher.subject', 'teacher', 'subjectTeacher.classTeacher.c_class'])->where('subject_teacher_id', $subject_teacher->id)->get();
+        }
         return response()->json(compact('materials'), 200);
     }
 
-    public function update()
+    public function changeStatus(Request $request, Material $material)
     {
+        $material->status = $request->status;
+        $material->save();
+        return response()->json([], 204);
     }
 
     public function destroy($id)

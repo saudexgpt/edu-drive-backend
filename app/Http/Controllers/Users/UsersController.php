@@ -65,6 +65,12 @@ class UsersController extends Controller
         ], 401);
     }
 
+    public function approveUser(Request $request, User $user)
+    {
+        $user->is_confirmed = '1';
+        $user->save();
+        return response()->json(['message' => 'success'], 200);
+    }
 
     /**
      * Show the form for creating a new resource.

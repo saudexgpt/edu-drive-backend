@@ -120,6 +120,9 @@ class AuthController extends Controller
     }
     private function generateAuthorizationKey($user)
     {
+        if ($user->is_confirmed === '0') {
+            return response()->json(['message' => 'Account Activation Needed'], 403);
+        }
         $user_resource = new UserResource($user);
         $tokenResult = $user->createToken('Personal Access Token');
         $token = $tokenResult->plainTextToken;

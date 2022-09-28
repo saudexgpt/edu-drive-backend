@@ -61,7 +61,7 @@ class SubjectTeacher extends Model
     }
     public function curriculum()
     {
-        return $this->hasOne(Curriculum::class);
+        return $this->hasMany(Curriculum::class);
     }
 
     public function materials()

@@ -23,6 +23,11 @@ class LevelsController extends Controller
         return $this->render(compact('levels'));
     }
     // this is used by admin to set pre-defined levels (as set by the super admin) for their schools
+    public function fetchCurriculumCategories()
+    {
+        $curriculum_categories = CurriculumCategory::with('curriculumLevelGroups.curriculumLevels')->get();
+        return response()->json(compact('curriculum_categories'), 200);
+    }
     public function fetchSpecificCurriculumLevels()
     {
         $curriculum_level_groups = [];

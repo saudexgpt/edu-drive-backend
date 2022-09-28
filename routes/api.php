@@ -40,6 +40,7 @@ use App\Http\Controllers\Account\FeesController;
 use App\Http\Controllers\Account\AccountController;
 use App\Http\Controllers\Account\PaymentsController;
 use App\Http\Controllers\Account\SalaryController;
+use App\Http\Controllers\Setup\RegistrationPinsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -57,6 +58,14 @@ Route::get('materials/read/{material}', [MaterialsController::class, 'readMateri
 Route::get('fetch-curriculum-setup', [CurriculumCategoryController::class, 'fetchCurriculumCategory']);
 Route::get('set-admin-role', [Controller::class, 'setAdminRole']);
 Route::post('register-potential-school', [SchoolsController::class, 'registerPotentialSchool']);
+
+
+Route::get('confirm-pin', [RegistrationPinsController::class, 'confirmPin']);
+Route::get('students/create', [StudentsController::class, 'create']);
+Route::get('staff/create', [StaffController::class, 'create']);
+Route::post('students/store-with-pin', [StudentsController::class, 'storeWithPin']);
+Route::post('staff/store-with-pin', [StaffController::class, 'storeWithPin']);
+
 Route::group(['prefix' => 'auth'], function () {
     Route::post('login', [AuthController::class, 'login']);
     Route::post('register', [AuthController::class, 'register'])->middleware('permission:create-users');
@@ -291,6 +300,7 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
         Route::get('/teacher/subject-materials', [MaterialsController::class, 'teacherSubjectMaterials']);
         Route::post('/store', [MaterialsController::class, 'store']);
         Route::get('/subject-materials/{subject_teacher}', [MaterialsController::class, 'subjectMaterials']);
+        Route::put('change-status/{material}', [MaterialsController::class, 'changeStatus']);
 
 
         Route::delete('/delete/{id}', [MaterialsController::class, 'destroy']);
@@ -421,6 +431,7 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
 
         Route::get('fetch-level-class', [LevelsController::class, 'fetchLevelAndClass']);
         Route::get('fetch-specific-curriculum-level-groups', [LevelsController::class, 'fetchSpecificCurriculumLevels']);
+        Route::get('fetch-curriculum-categories', [LevelsController::class, 'fetchCurriculumCategories']);
         Route::post('level/save', [LevelsController::class, 'store']);
         Route::put('level/update/{level}', [LevelsController::class, 'update']);
         Route::delete('level/destroy/{level}', [LevelsController::class, 'destroy']);
@@ -457,6 +468,14 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
         // update school logo
         Route::post('update-logo', [SchoolsController::class, 'updateLogo']);
         Route::put('update-color/{school}', [SchoolsController::class, 'saveGeneralSettings']);
+
+        ////////////////Registration PINs//////////////////////////////
+        Route::get('students-pins', [RegistrationPinsController::class, 'studentsPins']);
+        Route::get('staff-pins', [RegistrationPinsController::class, 'staffPins']);
+        Route::post('store-pins', [RegistrationPinsController::class, 'store']);
+        Route::put('change-status/{registrationPin}', [RegistrationPinsController::class, 'changeStatus']);
+
+        Route::post('delete-pins', [RegistrationPinsController::class, 'destroy']);
     });
 
     Route::group(['prefix' => 'teacher'], function () {
@@ -515,6 +534,8 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
 
         Route::get('admin-reset/password', [UsersController::class, 'adminResetUserPassword']);
         Route::put('reset/password/{user}', [UsersController::class, 'resetPassword']);
+        Route::put('approve-user/{user}', [UsersController::class, 'approveUser']);
+
         Route::post('upload-photo', [UsersController::class, 'updatePhoto']);
 
         // Route::resource('staff', StaffController::class);

@@ -39,9 +39,7 @@ class CurriculaController extends Controller
         $school = $this->getSchool();
         $teacher_id = $this->getStaff()->id;
         $term_id = $this->getTerm()->id;
-        $subject_teachers = SubjectTeacher::with(['subject', 'classTeacher.c_class', 'curriculum' => function ($q) use ($term_id) {
-            $q->where('term_id', $term_id);
-        }])->where('teacher_id', $teacher_id)->get();
+        $subject_teachers = SubjectTeacher::with(['subject', 'classTeacher.c_class'])->where(['school_id' => $school->id, 'teacher_id' => $teacher_id])->get();
 
         return response()->json(compact('subject_teachers'), 200);
     }
@@ -54,8 +52,10 @@ class CurriculaController extends Controller
 
         $subject_teacher_id = $request->subject_teacher_id;
         $description = $request->description;
+        $title = $request->title;
+        $week = $request->week;
 
-        $curriculum = Curriculum::where(['school_id' => $school->id, 'subject_teacher_id' => $subject_teacher_id, 'term_id' => $term_id])->first();
+        $curriculum = Curriculum::where(['school_id' => $school->id, 'subject_teacher_id' => $subject_teacher_id, 'term_id' => $term_id, 'week' => $week])->first();
 
         if (!$curriculum) {
             $curriculum = new Curriculum();
@@ -64,7 +64,9 @@ class CurriculaController extends Controller
         $curriculum->teacher_id = $teacher_id;
         $curriculum->subject_teacher_id = $subject_teacher_id;
         $curriculum->term_id = $term_id;
+        $curriculum->title = $title;
         $curriculum->description = $description;
+        $curriculum->week = $week;
         $curriculum->save();
         return response()->json([], 204);
     }
@@ -129,12 +131,7 @@ class CurriculaController extends Controller
     {
         $school_id = $this->getSchool()->id;
         $term_id = $this->getTerm()->id;
-        $curriculum = Curriculum::where(['school_id' => $school_id, 'term_id' => $term_id, 'subject_teacher_id' => $subject_teacher->id])->first();
-        if (!$curriculum) {
-            $curriculum = new Curriculum();
-            $curriculum->description = 'No Curriculum was set for this subject. Kindly inform your subject teacher';
-            $curriculum->curriculum = null;
-        }
+        $curriculum = Curriculum::where(['school_id' => $school_id, 'term_id' => $term_id, 'subject_teacher_id' => $subject_teacher->id])->get();
         return response()->json(compact('curriculum'), 200);
     }
 }

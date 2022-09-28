@@ -435,4 +435,11 @@ class SchoolsController extends Controller
 
         return 'success';
     }
+
+    public function updateCurriculum(Request $request, School $school)
+    {
+        $school->curriculum = $request->curriculum;
+        $school->save();
+        return 'success';
+    }
 }

@@ -12,6 +12,7 @@ use App\Models\Level;
 use App\Models\LocalGovernmentArea;
 use App\Models\RegistrationPin;
 use App\Models\Result;
+use App\Models\School;
 use App\Models\SSession;
 use App\Models\State;
 use App\Models\Student;
@@ -129,15 +130,17 @@ class StudentsController extends Controller
                 'student.user.country', 'student.user.state', 'student.user.lga', 'classTeacher.c_class'
             ])->where(['sess_id' => $sess_id, 'school_id' => $school_id])->get();
         } else {
+            $level = Level::find($level_id);
 
-            $students_in_class = StudentsInClass::with([
+
+            $students_in_class = $level->studentsInClass()->with([
                 'student.studentGuardian.guardian.user' => function ($query) {
                     $query->withTrashed();
                 },
                 'student.user.country', 'student.user.state', 'student.user.lga', 'classTeacher.c_class'
             ])
-                ->join('class_teachers', 'class_teachers.id', 'students_in_classes.class_teacher_id')
-                ->where('class_teachers.level_id', $level_id)
+                // ->join('class_teachers', 'class_teachers.id', 'students_in_classes.class_teacher_id')
+                // ->where('class_teachers.level_id', $level_id)
                 ->where(['sess_id' => $sess_id, 'students_in_classes.school_id' => $school_id])->get();
         }
 
@@ -185,14 +188,23 @@ class StudentsController extends Controller
     /**
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
      */
-    public function create()
+    public function create(Request $request)
     {
 
 
         //if(session()->has('pin') && session()->exists('school_id') && session()->has('type')){
-        $school_id = $this->getSchool()->id;
-        $sess_id = $this->getSession()->id;
-        $term_id = $this->getTerm()->id;
+        if (isset($request->school_id) && $request->school_id !== '') {
+            $school_id = $request->school_id;
+            $school = School::find($school_id);
+            $sess_id = $school->current_session;
+            $term_id = $school->current_term;
+        } else {
+
+            $school_id = $this->getSchool()->id;
+
+            $sess_id = $this->getSession()->id;
+            $term_id = $this->getTerm()->id;
+        }
         /////////////Information for adding a new student/////////////////////////////
         // $admission_session = $this->getSession();
         $reg_no = $this->generateUsername($school_id, 'student');
@@ -200,7 +212,7 @@ class StudentsController extends Controller
 
         $parent_username = $this->generateUsername($school_id, 'parent');
         //$this->updateUniqNumDb($school->id, 'parent');
-        $levels = $this->getLevels(); //Level::all();
+        $levels = Level::with('classTeachers.c_class', 'levelGroup')->where('school_id', $school_id)->orderBy('id')->get();
 
         $countries = Country::with('states.lgas')->orderBy('country_name')->get();
         $selected_country = Country::with('states.lgas')->where('country_name', 'Nigeria')->first();
@@ -208,7 +220,7 @@ class StudentsController extends Controller
         //////////////////////////////////////////////////////////////////////////
 
 
-        return  $this->render(compact('levels', 'countries', 'selected_country', 'reg_no', 'admission_sessions', 'parent_username'));
+        return  response()->json(compact('levels', 'countries', 'selected_country', 'reg_no', 'admission_sessions', 'parent_username'));
         /*}
         return redirect()->route('student_reg_pin');*/
     }
@@ -296,6 +308,82 @@ class StudentsController extends Controller
 
         $action = "Registered " . $request->first_name . " " . $request->last_name . " as new student";
         $this->auditTrailEvent($request, $action);
+        //$new_user = User::find($request->student_user_id);
+        //$all_staff = User::where('role', 'staff')->get();
+        //$user->notify(new NewRegistration($user));
+        //Notification::send($all_staff, new NewRegistration($new_user));
+        return 'Successful';
+    }
+    /**
+     * @param StudentRequest $request
+     * @param Student $student
+     * @return \Illuminate\Http\RedirectResponse
+     */
+    public function storeWithPin(Request $request)
+    {
+        //save and retrieve class information
+        // return $request;
+        $student_obj = new Student();
+        $school = School::find($request->school_id);
+        $sess_id = $school->current_session;
+        $term_id = $school->current_term;
+        // $request->school_id = $this->getSchool()->id;
+
+
+        // if ($this->isDuplicateStudent($request->first_name, $request->last_name)) {
+        //     return response()->json(['message' => "$request->last_name $request->first_name exists already"], 409);
+        // }
+
+        $request->folder_key = $school->folder_key;
+
+
+        $username = $this->generateUsername($school->id, 'parent');
+        $request->username = $username;
+        $user_obj = new User();
+        list($parent_user_id, $entry_status) = $user_obj->saveUserAsParent($request);
+
+        if ($entry_status == 'new_entry') {
+            $this->updateUniqNumDb($school->id, 'parent');
+        }
+        $request->parent_user_id = $parent_user_id;
+        // check for duplicate students
+
+        $username = $this->generateUsername($school->id, 'student');
+        $request->username = $username;
+        //save user information as student
+        $user_obj = new User();
+        $request->student_user_id = $user_obj->saveUserAsStudent($request, '0'); // the second parameter is the confirmation status '0' means yet to be confirmed/approved
+        $this->updateUniqNumDb($school->id, 'student');
+
+        //save students table informaiton
+        $request->registration_no = $username;
+        $request->student_id = $student_obj->saveStudentInfo($request);
+
+
+        $request->class_id = $request->class_teacher_id;
+
+
+
+        //add student to class
+        // Students will be added to class based on current session, because that is when the system recognizes them
+        $student_in_class_obj = new StudentsInClass();
+        $student_in_class_obj->addStudentToClass($request->student_id, $request->class_id, $sess_id, $term_id, $school->id);
+
+        //save guardian informaiton
+        $guardian_obj = new Guardian();
+
+        $guardian_obj->saveGuardianInfo($request);
+
+        $registrationPin = RegistrationPin::find($request->pin_id);
+        if ($registrationPin) {
+            if ($registrationPin->is_general === 0) {
+                $registrationPin->status = 'used';
+                $registrationPin->save();
+            }
+        }
+
+        // $action = "Registered " . $request->first_name . " " . $request->last_name . " as new student";
+        // $this->auditTrailEvent($request, $action);
         //$new_user = User::find($request->student_user_id);
         //$all_staff = User::where('role', 'staff')->get();
         //$user->notify(new NewRegistration($user));

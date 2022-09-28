@@ -462,9 +462,9 @@ class Controller extends BaseController
         //$this->this_term = $term;
         $school = $this->getSchool();
         if ($school) {
-            $session = Term::find((int)$school->current_term);
+            $term = Term::find((int)$school->current_term);
 
-            $this->this_term = $session;
+            $this->this_term = $term;
         }
     }
 
