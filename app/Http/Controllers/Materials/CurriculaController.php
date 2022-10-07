@@ -36,12 +36,17 @@ class CurriculaController extends Controller
 
     public function teacherCurriculum()
     {
-        $school = $this->getSchool();
+        $user = $this->getUser();
+        $school_id = $this->getSchool()->id;
         $teacher_id = $this->getStaff()->id;
-        $term_id = $this->getTerm()->id;
-        $subject_teachers = SubjectTeacher::with(['subject', 'classTeacher.c_class'])->where(['school_id' => $school->id, 'teacher_id' => $teacher_id])->get();
+        if ($user->hasRole('admin')) {
+            $subject_teachers = SubjectTeacher::with(['subject', 'classTeacher.c_class'])->where(['school_id' => $school_id])->get();
+        } else {
+            $subject_teachers = SubjectTeacher::with(['subject', 'classTeacher.c_class'])->where(['teacher_id' => $teacher_id, 'school_id' => $school_id])->get();
+        }
 
-        return response()->json(compact('subject_teachers'), 200);
+
+        return response()->json(compact('subject_teachers', 'teacher_id'), 200);
     }
 
     public function store(Request $request)

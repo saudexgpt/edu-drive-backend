@@ -32,12 +32,15 @@ class AttendanceController extends Controller
 
     public function subjects()
     {
+        $user = $this->getUser();
         $school_id = $this->getSchool()->id;
 
         $id = $this->getStaff()->id;
-
-        $subject_teachers = SubjectTeacher::with(['subject', 'classTeacher.c_class'])->where(['teacher_id' => $id, 'school_id' => $school_id])->get();
-
+        if ($user->hasRole('admin')) {
+            $subject_teachers = SubjectTeacher::with(['subject', 'classTeacher.c_class'])->where(['school_id' => $school_id])->get();
+        } else {
+            $subject_teachers = SubjectTeacher::with(['subject', 'classTeacher.c_class'])->where(['teacher_id' => $id, 'school_id' => $school_id])->get();
+        }
 
         return $this->render(compact('subject_teachers'));
     }
@@ -107,11 +110,17 @@ class AttendanceController extends Controller
         $term_id = $this->getTerm()->id;
         $school_id = $this->getSchool()->id;
         $subject_teacher_id = $request->subject_teacher_id;
+        $can_create = false;
 
         //echo $option_id;exit;
         //$class_teacher_id = $option_id;
 
         $subject_teacher = SubjectTeacher::find($subject_teacher_id);
+
+        $id = $this->getStaff()->id;
+        if ($subject_teacher->teacher_id === $id) {
+            $can_create = true;
+        }
         $students = $teacher->teacherClassStudents($subject_teacher->class_teacher_id, $sess_id, $term_id, $school_id);
         //$fromDate = fromDate();
         $toDate = toDate();
@@ -155,7 +164,7 @@ class AttendanceController extends Controller
         }
         //print_r($marked_student_array);exit;
         //make teacher create attendance for the day
-        return response()->json(compact('students', 'present_students', 'absent_students', 'toDate', 'subject_teacher_id', 'marked_student_array', 'attendance_id', 'no_of_days_in_month', 'day', 'day_of_week', 'date_in_words', 'month_and_year'));
+        return response()->json(compact('students', 'present_students', 'absent_students', 'toDate', 'subject_teacher_id', 'marked_student_array', 'attendance_id', 'no_of_days_in_month', 'day', 'day_of_week', 'date_in_words', 'month_and_year', 'can_create'));
     }
 
 

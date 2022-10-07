@@ -36,10 +36,15 @@ class MaterialsController extends Controller
 
     public function teacherSubjectMaterials(Request $request)
     {
-        $school = $this->getSchool();
+        $user = $this->getUser();
+        $school_id = $this->getSchool()->id;
         $teacher_id = $this->getStaff()->id;
-        $subject_teacher_id = $request->subject_teacher_id;
-        $subject_teachers = SubjectTeacher::with(['subject', 'classTeacher.c_class'])->where('teacher_id', $teacher_id)->get();
+        if ($user->hasRole('admin')) {
+            $subject_teachers = SubjectTeacher::with(['subject', 'classTeacher.c_class'])->where(['school_id' => $school_id])->get();
+        } else {
+            $subject_teachers = SubjectTeacher::with(['subject', 'classTeacher.c_class'])->where(['teacher_id' => $teacher_id, 'school_id' => $school_id])->get();
+        }
+
 
         return response()->json(compact('subject_teachers'), 200);
     }

@@ -59,6 +59,7 @@ Route::get('fetch-curriculum-setup', [CurriculumCategoryController::class, 'fetc
 Route::get('set-admin-role', [Controller::class, 'setAdminRole']);
 Route::post('register-potential-school', [SchoolsController::class, 'registerPotentialSchool']);
 
+Route::post('partners/register', [PartnersController::class, 'store']);
 
 Route::get('confirm-pin', [RegistrationPinsController::class, 'confirmPin']);
 Route::get('students/create', [StudentsController::class, 'create']);
@@ -559,7 +560,6 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
 
     Route::group(['prefix' => 'partners'], function () {
         Route::get('/', [PartnersController::class, 'index']);
-        Route::post('register', [PartnersController::class, 'store']);
         Route::put('update/{partner}', [PartnersController::class, 'update']);
     });
 });

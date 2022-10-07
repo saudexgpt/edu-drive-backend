@@ -29,12 +29,15 @@ class AssignmentsController extends Controller
 {
     public function allAssignments(Request $request)
     {
+        set_time_limit(0);
         $school_id = $this->getSchool()->id;
         $sess_id = $this->getSession()->id;
         $start = $request->start_date;
         $end = $request->end_date;
         $term_id = $this->getTerm()->id;
-        $assignments = Assignment::with('studentAssignments.student.user', 'subjectTeacher.subject', 'subjectTeacher.classTeacher.c_class', 'subjectTeacher.staff.user')->where(['school_id' => $school_id, 'sess_id' => $sess_id, 'term_id' => $term_id])->where('created_at', '>=', $start)->where('created_at', '<=', $end)->orderBy('id', 'DESC')->get();
+        $class_teacher_id = $request->class_teacher_id;
+        $subject_teacher_ids = SubjectTeacher::where(['school_id' => $school_id, 'class_teacher_id' => $class_teacher_id])->pluck('id');
+        $assignments = Assignment::with('studentAssignments.student.user', 'subjectTeacher.subject', 'subjectTeacher.classTeacher.c_class', 'subjectTeacher.staff.user')->where(['school_id' => $school_id, 'sess_id' => $sess_id, 'term_id' => $term_id])->whereIn('subject_teacher_id', $subject_teacher_ids)->where('created_at', '>=', $start)->where('created_at', '<=', $end)->orderBy('id', 'DESC')->get();
         return $this->render(compact('assignments'));
     }
     public function index(Request $request)
@@ -306,13 +309,18 @@ class AssignmentsController extends Controller
     public function studentAnswerDetails(Request $request, $id)
     {
         $can_edit = false;
+        $today = date('Y-m-d H:i:s', strtotime('now'));
         if (isset($request->student_id) && $request->student_id != "") {
             $student = Student::find($request->student_id);
         } else {
             $student = $this->getStudent();
             $can_edit = true;
         }
-        $assignment_to_tackle = AssignmentStudent::where(['student_id' => $student->id, 'assignment_id' => $id])->first();
+        $assignment = Assignment::find($id);
+        if ($assignment->deadline < $today) {
+            $can_edit = false;
+        }
+        $assignment_to_tackle = AssignmentStudent::with('assignment')->where(['student_id' => $student->id, 'assignment_id' => $id])->first();
         if ($assignment_to_tackle) {
             if ($assignment_to_tackle->score != null) {
                 $can_edit = false;
