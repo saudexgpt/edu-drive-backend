@@ -305,9 +305,9 @@ class StudentsController extends Controller
         $guardian_obj = new Guardian();
 
         $guardian_obj->saveGuardianInfo($request);
-
+        $title  = "New Student Registration";
         $action = "Registered " . $request->first_name . " " . $request->last_name . " as new student";
-        $this->auditTrailEvent($request, $action);
+        $this->auditTrailEvent($title, $action, $request->class_id);
         //$new_user = User::find($request->student_user_id);
         //$all_staff = User::where('role', 'staff')->get();
         //$user->notify(new NewRegistration($user));
@@ -512,58 +512,58 @@ class StudentsController extends Controller
      * @param $id
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\Http\RedirectResponse|\Illuminate\View\View
      */
-    public function show(Student $student)
-    {
-        $school_id = $student->school_id;
-        $sess_id = $student->school->current_session;
-        $term_id = $student->school->current_term;
-        // $school_id = $student->school_id;
-        // $sess_id = $this->getSession()->id;
-        // $term_id = $this->getTerm()->id;
-        $student = Student::with(['school.lga', 'studentGuardian.guardian.user', 'user.state', 'user.lga', 'myClasses' => function ($query) use ($school_id, $sess_id) {
-            $query->where(['sess_id' => $sess_id, 'students_in_classes.school_id' => $school_id])->orderBy('id', 'DESC');
-        }, 'myClasses.classTeacher.c_class',  'currentStudentLevel', 'myClasses.classTeacher.staff.user', 'myClasses.classTeacher.subjectTeachers.staff.user', 'behaviors', 'skills', 'results.subjectTeacher.subject'])->find($student->id);
-        return $this->render(compact('student'));
-    }
-
     // public function show(Student $student)
     // {
-    //     try {
-    //         $school = $this->getSchool();
-    //         $user = $this->getUser();
-    //         $sess_id = $this->getSession()->id;
-    //         $term_id = $this->getTerm()->id;
-    //         $can_edit = false;
-    //         $id = $student->id;
-    //         $student_in_class_obj = new StudentsInClass();
-
-
-    //         // $student_in_class =  StudentsInClass::where([
-    //         //                         'student_id' => $id,
-    //         //                         'sess_id' => $sess_id,
-    //         //                         'term_id' => $term_id,
-    //         //                         //'school_id' => $school_id
-    //         //                     ])->first();
-    //         $student_in_class =  StudentsInClass::where('student_id', $id)->orderBy('id', 'DESC')->first();
-
-    //         if (!$student_in_class) {
-
-    //             return response()->json(['error' => 'Student not found'], 404);
-    //         }
-    //         if ($user->student) {
-    //             if ($id == $user->student->id) {
-    //                 $can_edit = true;
-    //             }
-    //         }
-    //         //Get the student details for this student_id
-    //         $student = $student->getStudentDetails($school, $id, $student_in_class->class_teacher_id);
-
-
-    //         return  $this->render(compact('student', 'can_edit'));
-    //     } catch (ModelNotFoundException $ex) {
-    //         return response()->json(['Error ' => $ex->getMessage()], 404);
-    //     }
+    //     $school_id = $student->school_id;
+    //     $sess_id = $student->school->current_session;
+    //     $term_id = $student->school->current_term;
+    //     // $school_id = $student->school_id;
+    //     // $sess_id = $this->getSession()->id;
+    //     // $term_id = $this->getTerm()->id;
+    //     $student = Student::with(['school.lga', 'studentGuardian.guardian.user', 'user.state', 'user.lga', 'myClasses' => function ($query) use ($school_id, $sess_id) {
+    //         $query->where(['sess_id' => $sess_id, 'students_in_classes.school_id' => $school_id])->orderBy('id', 'DESC');
+    //     }, 'myClasses.classTeacher.c_class',  'currentStudentLevel', 'myClasses.classTeacher.staff.user', 'myClasses.classTeacher.subjectTeachers.staff.user', 'behaviors', 'skills', 'results.subjectTeacher.subject'])->find($student->id);
+    //     return $this->render(compact('student'));
     // }
+
+    public function show(Student $student)
+    {
+        try {
+            $school = $this->getSchool();
+            $user = $this->getUser();
+            $sess_id = $this->getSession()->id;
+            $term_id = $this->getTerm()->id;
+            $can_edit = false;
+            $id = $student->id;
+            $student_in_class_obj = new StudentsInClass();
+
+
+            // $student_in_class =  StudentsInClass::where([
+            //                         'student_id' => $id,
+            //                         'sess_id' => $sess_id,
+            //                         'term_id' => $term_id,
+            //                         //'school_id' => $school_id
+            //                     ])->first();
+            $student_in_class =  StudentsInClass::with('classTeacher.c_class')->where('student_id', $id)->orderBy('id', 'DESC')->first();
+
+            if (!$student_in_class) {
+
+                return response()->json(['error' => 'Student not found'], 404);
+            }
+            if ($user->student) {
+                if ($id == $user->student->id) {
+                    $can_edit = true;
+                }
+            }
+            //Get the student details for this student_id
+            $student = $student->getStudentDetails($school, $id, $student_in_class->class_teacher_id);
+
+
+            return  $this->render(compact('student', 'can_edit'));
+        } catch (ModelNotFoundException $ex) {
+            return response()->json(['Error ' => $ex->getMessage()], 404);
+        }
+    }
     //this method is performed by the teacher
     public function assignments()
     {
@@ -592,81 +592,81 @@ class StudentsController extends Controller
         }
     }*/
 
-    public function studentTeachers(Student $stud, $id = NULL)
-    {
-        $school = $this->getSchool();
-        $school_id = $school->id;
-        $sess_id = $this->getSession()->id;
-        $term_id = $this->getTerm()->id;
-        $student_in_class_obj = new StudentsInClass();
-        $request = request()->all();
-        if (isset($request['student_id']) && $request['student_id'] != NULL) {
-            $stud_id  = $request['student_id'];
-            $parent_view = TRUE;
-        }
-        if ($this->getUser()->hasRole('student')) {
-            $stud_id = $this->getStudent()->id;
-            $parent_view = FALSE;
-        }
+    // public function studentTeachers(Student $stud, $id = NULL)
+    // {
+    //     $school = $this->getSchool();
+    //     $school_id = $school->id;
+    //     $sess_id = $this->getSession()->id;
+    //     $term_id = $this->getTerm()->id;
+    //     $student_in_class_obj = new StudentsInClass();
+    //     $request = request()->all();
+    //     if (isset($request['student_id']) && $request['student_id'] != NULL) {
+    //         $stud_id  = $request['student_id'];
+    //         $parent_view = TRUE;
+    //     }
+    //     if ($this->getUser()->hasRole('student')) {
+    //         $stud_id = $this->getStudent()->id;
+    //         $parent_view = FALSE;
+    //     }
 
 
-        $student_in_class = $student_in_class_obj->fetchStudentInClass($stud_id,  $sess_id, $term_id, $school_id);
+    //     $student_in_class = $student_in_class_obj->fetchStudentInClass($stud_id,  $sess_id, $term_id, $school_id);
 
-        if (!$student_in_class) {
-            $message = "You are yet to be assigned a class ";
+    //     if (!$student_in_class) {
+    //         $message = "You are yet to be assigned a class ";
 
-            return $this->render('errors.404', compact('message'));
-        }
-        $class_teacher_id = $student_in_class->class_teacher_id;
+    //         return $this->render('errors.404', compact('message'));
+    //     }
+    //     $class_teacher_id = $student_in_class->class_teacher_id;
 
-        //Get the student details for this student_id
-        list($student, $parent, $class, $subjects) = $stud->getStudentDetails($school, $stud_id, $class_teacher_id);
+    //     //Get the student details for this student_id
+    //     list($student, $parent, $class, $subjects) = $stud->getStudentDetails($school, $stud_id, $class_teacher_id);
 
 
 
-        //dd(DB::getQueryLog());
-        return $this->render(
-            'core::students.teachers',
-            compact('student', 'parent', 'class', 'subjects', 'parent_view')
-        );
-    }
+    //     //dd(DB::getQueryLog());
+    //     return $this->render(
+    //         'core::students.teachers',
+    //         compact('student', 'parent', 'class', 'subjects', 'parent_view')
+    //     );
+    // }
 
     //method to render student subjects
-    public function studentSubjects(Student $stud)
-    {
-        $school = $this->getSchool();
-        $school_id = $school->id;
-        $sess_id = $this->getSession()->id;
-        $term_id = $this->getTerm()->id;
-        $student_in_class_obj = new StudentsInClass();
-        $request = request()->all();
-        if (isset($request['stud_id']) && $request['stud_id'] != NULL) {
-            $stud_id  = $request['stud_id'];
-            $parent_view = TRUE;
-        }
-        if ($this->getUser()->hasRole('student')) {
-            $stud_id = $this->getStudent()->id;
-            $parent_view = FALSE;
-        }
+    // public function studentSubjects(Student $stud)
+    // {
+    //     $school = $this->getSchool();
+    //     $school_id = $school->id;
+    //     $sess_id = $this->getSession()->id;
+    //     $term_id = $this->getTerm()->id;
+    //     $student_in_class_obj = new StudentsInClass();
+    //     $request = request()->all();
+    //     if (isset($request['stud_id']) && $request['stud_id'] != NULL) {
+    //         $stud_id  = $request['stud_id'];
+    //         $parent_view = TRUE;
+    //     }
+    //     if ($this->getUser()->hasRole('student')) {
+    //         $stud_id = $this->getStudent()->id;
+    //         $parent_view = FALSE;
+    //     }
 
-        $student_in_class = $student_in_class_obj->fetchStudentInClass($stud_id,  $sess_id, $term_id, $school_id);
+    //     $student_in_class = $student_in_class_obj->fetchStudentInClass($stud_id,  $sess_id, $term_id, $school_id);
 
-        if (!$student_in_class) {
-            $message = "You are yet to be assigned a class ";
+    //     if (!$student_in_class) {
+    //         $message = "You are yet to be assigned a class ";
 
-            return $this->render('errors.404', compact('message'));
-        }
-        $class_teacher_id = $student_in_class->class_teacher_id;
-        list($student, $parent, $class, $subjects) = $stud->getStudentDetails($school, $stud_id, $class_teacher_id);
-        /*foreach ($subjects as $subject):
+    //         return $this->render('errors.404', compact('message'));
+    //     }
+    //     $class_teacher_id = $student_in_class->class_teacher_id;
+    //     list($student, $parent, $class, $subjects) = $stud->getStudentDetails($school, $stud_id, $class_teacher_id);
+    //     /*foreach ($subjects as $subject):
 
-            $student_ids = $subject->student_ids;
-            $student_id_array = explode('~', $student_ids);
-            $subject->student_ids = $student_id_array;
-        endforeach;*/
+    //         $student_ids = $subject->student_ids;
+    //         $student_id_array = explode('~', $student_ids);
+    //         $subject->student_ids = $student_id_array;
+    //     endforeach;*/
 
-        return $this->render('core::students.subjects', compact('subjects', 'stud_id', 'student', 'parent_view', 'parent', 'class'));
-    }
+    //     return $this->render('core::students.subjects', compact('subjects', 'stud_id', 'student', 'parent_view', 'parent', 'class'));
+    // }
 
     public function levelStudents(Request $request)
     {
@@ -758,42 +758,42 @@ class StudentsController extends Controller
         return 'false';
     }
 
-    public function studentDashboard()
-    {
+    // public function studentDashboard()
+    // {
 
 
-        $stud = $this->getStudent();
-        $id = $this->getStudent()->id;
-        $school = $this->getSchool();
-        $school_id = $school->id;
-        $sess_id = $this->getSession()->id;
-        $term_id = $this->getTerm()->id;
-        $student_in_class_obj = new StudentsInClass();
+    //     $stud = $this->getStudent();
+    //     $id = $this->getStudent()->id;
+    //     $school = $this->getSchool();
+    //     $school_id = $school->id;
+    //     $sess_id = $this->getSession()->id;
+    //     $term_id = $this->getTerm()->id;
+    //     $student_in_class_obj = new StudentsInClass();
 
 
-        $student_in_class = $student_in_class_obj->fetchStudentInClass($id, $sess_id, $term_id, $school_id);
+    //     $student_in_class = $student_in_class_obj->fetchStudentInClass($id, $sess_id, $term_id, $school_id);
 
-        if ($student_in_class) {
+    //     if ($student_in_class) {
 
-            //Get the student details for this student_id
-            list($student, $parent, $class, $subjects) = $stud->getStudentDetails($school, $id, $student_in_class->class_teacher_id);
-            //return $class->level;
+    //         //Get the student details for this student_id
+    //         list($student, $parent, $class, $subjects) = $stud->getStudentDetails($school, $id, $student_in_class->class_teacher_id);
+    //         //return $class->level;
 
-            //return $parent->relationship;
-            //echo $class->section->name;exit;
-            //removing the array to make it a single string
-            //$student = $student[0];
-            $student->state = State::find($student->user->state_id);
-            $student->lga = LocalGovernmentArea::find($student->user->lga_id);
-            $student->feePaymentMonitor = $student->feePaymentMonitor()->orderBy('id', 'DESC')->get();
+    //         //return $parent->relationship;
+    //         //echo $class->section->name;exit;
+    //         //removing the array to make it a single string
+    //         //$student = $student[0];
+    //         $student->state = State::find($student->user->state_id);
+    //         $student->lga = LocalGovernmentArea::find($student->user->lga_id);
+    //         $student->feePaymentMonitor = $student->feePaymentMonitor()->orderBy('id', 'DESC')->get();
 
-            return  $this->render('core::dashboard.student', compact('student', 'parent', 'class', 'subjects'));
-        }
-        // Flash::error('STUDENT CLASS DETAILS NOT FOUND');
-        $message = "You are yet to be assigned a class. See the school Administrator. ";
+    //         return  $this->render('core::dashboard.student', compact('student', 'parent', 'class', 'subjects'));
+    //     }
+    //     // Flash::error('STUDENT CLASS DETAILS NOT FOUND');
+    //     $message = "You are yet to be assigned a class. See the school Administrator. ";
 
-        return $this->render('errors.404', compact('message'));
-    }
+    //     return $this->render('errors.404', compact('message'));
+    // }
     // public function toggleStudentNonPaymentSuspension(Request $request)
     // {
     //     $student_id = $request->student_id;

@@ -138,6 +138,8 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
 
 
             Route::put('approve-school-fee/{school_fee_payment}', [PaymentsController::class, 'approveFeePayment']);
+
+            Route::get('debtors-list/{level_id}', [PaymentsController::class, 'debtorsList']);
         });
         Route::group(['prefix' => 'salary'], function () {
 
@@ -439,8 +441,8 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
 
         Route::resource('classes', ClassesController::class);
         Route::post('class/assign-teacher', [ClassesController::class, 'assignClassTeacher']);
-
         Route::get('class-teacher-class', [ClassesController::class, 'classTeacherClasses']);
+        Route::delete('class/destroy/{class_teacher}', [ClassesController::class, 'destroy']);
 
         Route::resource('sections', SectionsController::class);
         Route::resource('subjects', SubjectsController::class);
@@ -463,6 +465,7 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
         Route::post('manage-subject-students', [SubjectsController::class, 'manageSubjectStudents']);
         Route::get('subject-teacher-subject', [SubjectsController::class, 'subjectTeachersSubjects']);
         Route::get('student-subject', [SubjectsController::class, 'studentSubjects']);
+        Route::put('enable-subject/{subject}', [SubjectsController::class, 'enableSubject']);
 
         Route::get('get-class-students', [ClassesController::class, 'getClassStudents']);
         Route::post('record-ratings', [ClassesController::class, 'recordRatings']);

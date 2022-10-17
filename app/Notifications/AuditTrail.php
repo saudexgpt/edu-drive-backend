@@ -7,8 +7,9 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use Illuminate\Notifications\Messages\BroadcastMessage;
 
-class AuditTrail extends Notification // implements ShouldQueue
+class AuditTrail extends Notification implements ShouldQueue
 {
     use Queueable;
     public $title;
@@ -65,4 +66,21 @@ class AuditTrail extends Notification // implements ShouldQueue
             'description' => $this->description,
         ];
     }
+
+    public function toBroadcast($notifiable)
+    {
+        return new BroadcastMessage([
+            'title' => $this->title,
+            'description' => $this->description,
+        ]);
+    }
+
+    // public function toPushNotification($notifiable)
+    // {
+    //     return PusherMessagE::create()
+    //         ->iOS()
+    //         ->badge(1)
+    //         ->sound('success')
+    //         ->body("Your {$notifiable->service} account was approved!");
+    // }
 }

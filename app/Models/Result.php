@@ -639,7 +639,7 @@ class Result extends Model
         $total_score = 0;
         if ($subject_teacher_ids != '[]') {
             foreach ($subject_teacher_ids as $subject_teacher_id) {
-                $subject_teacher = SubjectTeacher::with('subject')->findOrFail($subject_teacher_id);
+                $subject_teacher = SubjectTeacher::with('classTeacher.c_class', 'subject')->findOrFail($subject_teacher_id);
                 $average = Result::where(['recorded_by' => $teacher_id, 'sess_id' => $sess_id, 'subject_teacher_id' => $subject_teacher_id, 'result_status' => 'Applicable'])->where('exam', '!=', null)->avg('total');
 
                 list($grade, $color, $grade_point) = $this->resultGrade($average, $grades);

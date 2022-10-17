@@ -57,12 +57,14 @@ class RoutinesController extends Controller
         return $this->render('timetable::routines.class_routine', compact('classes', 'routines', 'subject_array', 'this_class'));
     }
 
-    public function store(Routine $routine)
+    public function store(Request $request, Routine $routine)
     {
         $inputs = request()->all();
         $subject_teacher_id = $inputs['subject_teacher_id'];
         $class_teacher_id = $inputs['class_teacher_id'];
-        $teacher_id = SubjectTeacher::find($subject_teacher_id)->teacher_id;
+        $class_teacher = ClassTeacher::find($class_teacher_id);
+        $subject_teacher = SubjectTeacher::with('subject')->find($subject_teacher_id);
+        $teacher_id = $subject_teacher->teacher_id;
         $day = $inputs['day'];
         $start = date('H:i:s', strtotime($inputs['start']));
         $end = date('H:i:s', strtotime($inputs['end']));
@@ -93,6 +95,9 @@ class RoutinesController extends Controller
                 'start' => $start,
                 'end' => $end
             ]);
+            $title  = "Time Table Created";
+            $action = "Time table for " . $subject_teacher->subject->name . " (" . $class_teacher->c_class->name . ") was created";
+            $this->auditTrailEvent($title, $action, $class_teacher_id);
         }
         return $this->fetchClassRoutine($class_teacher_id);
 
@@ -104,7 +109,7 @@ class RoutinesController extends Controller
         //redirect()->route('get_routine', ['class_id'=>$class_teacher_id]);
     }
 
-    public function updateRoutine()
+    public function updateRoutine(Request $request)
     {
         $inputs = request()->all();
         $id = $inputs['id'];
@@ -124,13 +129,25 @@ class RoutinesController extends Controller
             'day'   => $day
         ]);
 
+        $class_teacher = ClassTeacher::find($routine->class_teacher_id);
+        $subject_teacher = SubjectTeacher::with('subject')->find($routine->subject_teacher_id);
+        $title  = "Time Table Updated";
+        $action = "Time table for " . $subject_teacher->subject->name . " (" . $class_teacher->c_class->name . ") was updated";
+        $this->auditTrailEvent($title, $action, $class_teacher->id);
+
         /*$class_teacher_id =  $routine->class_teacher_id;
         return $routines = $this->fetchRoutine($class_teacher_id);*/
     }
 
-    public function destroy($id)
+    public function destroy(Request $request, $id)
     {
         $routine = Routine::find($id);
+        $class_teacher = ClassTeacher::find($routine->class_teacher_id);
+        $subject_teacher = SubjectTeacher::with('subject')->find($routine->subject_teacher_id);
+
+        $title  = "Time Table Deleted";
+        $action = "Time table for " . $subject_teacher->subject->name . " (" . $class_teacher->c_class->name . ") was deleted";
+        $this->auditTrailEvent($title, $action, $class_teacher->id);
         $routine->delete();
         // return $routines = $this->fetchRoutine($class_teacher_id);
     }

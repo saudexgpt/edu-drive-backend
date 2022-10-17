@@ -3,10 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Events\ClassEvent;
-use App\Events\Event;
+use App\Events\AuditTrailEvent;
 use App\Events\SubjectEvent;
 use App\Http\Resources\UserResource;
 use App\Models\ActivatedModule;
+use App\Notifications\AuditTrail;
 use App\Models\ClassTeacher;
 use App\Models\CurriculumLevelGroup;
 use App\Models\Gallery;
@@ -38,6 +39,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 
 class Controller extends BaseController
 {
@@ -591,37 +593,106 @@ class Controller extends BaseController
 
         return $folder . '/' . $file_name;
     }
+    // public function auditTrailEvent($request, $action, $class_teacher_id = null)
+    // {
 
-    public function auditTrailEvent($request, $action)
+    //     $user = $this->getUser();
+    //     if ($user) {
+    //         if ($user->role == 'super') {
+    //             return false;
+    //         }
+    //         if (($user->role == "staff")) {
+    //             $user_school_id = Staff::where('user_id', $user->id)->first()->school_id;
+    //             $this->setSchool($user_school_id);
+    //         } else if ($user->role == "student") {
+
+    //             $user_school_id = Student::where('user_id', $user->id)->first()->school_id;
+    //             $this->setSchool($user_school_id);
+    //         } else if ($user->role == "parent") {
+    //             $user_school_id = Guardian::where('user_id', $user->id)->first()->school_id;
+    //             $this->setSchool($user_school_id);
+    //         }
+    //         $sess_id = $this->getSession()->id;
+    //         $term_id = $this->getTerm()->id;
+
+    //         $request->actor_id = $user->id; //this is the id of the user in users table
+    //         $request->actor_name = $user->first_name . ' ' . $user->last_name;
+    //         $request->actor_role = $user->role;
+    //         $request->school_id = $user_school_id;
+    //         $request->sess_id = $sess_id;
+    //         $request->term_id = $term_id;
+    //         $request->class_teacher_id = $class_teacher_id;
+    //         $request->action = $action;
+
+    //         event(new AuditTrailEvent($request));
+    //     }
+    // }
+    public function auditTrailEvent($title, $action, $class_teacher_id = null)
     {
 
-        $this->setUser();
         $user = $this->getUser();
         if ($user) {
             if ($user->role == 'super') {
                 return false;
             }
             if (($user->role == "staff")) {
-
-
                 $user_school_id = Staff::where('user_id', $user->id)->first()->school_id;
+                $this->setSchool($user_school_id);
             } else if ($user->role == "student") {
 
                 $user_school_id = Student::where('user_id', $user->id)->first()->school_id;
+                $this->setSchool($user_school_id);
             } else if ($user->role == "parent") {
                 $user_school_id = Guardian::where('user_id', $user->id)->first()->school_id;
+                $this->setSchool($user_school_id);
             }
-
-            $request->actor_id = $user->id; //this is the id of the user in users table
-            $request->actor_name = $user->first_name . ' ' . $user->last_name;
-            $request->actor_role = $user->role;
-            $request->school_id = $user_school_id;
-            $request->action = $action;
-
-            event(new Event($request));
+            $sess_id = $this->getSession()->id;
+            // fetch admin
+            $users = $this->getSchoolAdmins($user_school_id);
+            $class_communities = $this->getClassCommunity($user_school_id, $sess_id, $class_teacher_id);
+            $users = $users->merge($class_communities);
         }
+
+        $notification = new AuditTrail($title, $action);
+        // if ($class_teacher_id !== null) {
+        //     $class = [ClassTeacher::find($class_teacher_id)];
+
+        //     Notification::send($class, $notification);
+        // }
+        // broadcast(new AuditTrailEvent($title, $action));
+        return Notification::send($users->unique(), $notification);
     }
 
+    public function getSchoolAdmins($school_id)
+    {
+        $users = User::join('staff', 'staff.user_id', 'users.id')
+            ->where('staff.school_id', $school_id)
+            ->whereHas('roles', function ($query) {
+                $query->where('name', '=', 'admin'); // this is the role id inside of this callback
+            })->select('users.*')->get();
+
+        return $users;
+    }
+
+    public function getClassCommunity($school_id, $sess_id, $class_teacher_id)
+    {
+        $users = User::join('students', 'students.user_id', 'users.id')
+            ->join('students_in_classes', 'students_in_classes.student_id', 'students.id')
+            ->where('students_in_classes.class_teacher_id', $class_teacher_id)
+            ->where('students_in_classes.sess_id', $sess_id)
+            ->where('students.school_id', $school_id)
+            ->select('users.*')->get();
+
+        $teachers_users = User::join('staff', 'staff.user_id', 'users.id')
+            ->join('subject_teachers', 'subject_teachers.teacher_id', 'staff.id')
+            ->where('subject_teachers.class_teacher_id', $class_teacher_id)
+            ->where('staff.school_id', $school_id)
+            ->select('users.*')->get();
+
+        $users = $users->merge($teachers_users);
+
+        return $users;
+    }
     public function teacherStudentEventTrail($request, $action, $activity_type)
     {
 
@@ -636,7 +707,7 @@ class Controller extends BaseController
         $request->action = $action;
 
 
-        event(new Event($request));
+        event(new AuditTrailEvent($request));
 
         if ($activity_type == 'class') {
             event(new ClassEvent($request)); //log the class event

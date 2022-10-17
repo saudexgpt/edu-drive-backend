@@ -88,7 +88,9 @@ class LibrariesController extends Controller
         $book->description = $request->description;
         $book->created_by = $user->id;
         $book->save();
+        $action = "added $book->quantity copies of books titled $book->title by $book->authors to the library";
 
+        $this->auditTrailEvent($request, $action);
         return response()->json([], 200);
     }
 
@@ -110,6 +112,11 @@ class LibrariesController extends Controller
     }
     public function destroyBook(Request $request, LibraryBook $book)
     {
+        $user = $this->getUser();
+        $title = "Library Book Deleted";
+        $action = "$user->first_name deleted a book titled $book->title by $book->authors from the library";
+
+        $this->auditTrailEvent($title, $action);
         $book->delete();
 
         return response()->json([], 204);
@@ -189,6 +196,12 @@ class LibrariesController extends Controller
         $borrow->processed_by = $user->id;
         $borrow->save();
 
+        $book = LibraryBook::find($request->library_book_id);
+        $borrower = $borrow->borrower;
+        $title = "Library Book Borrowed";
+        $action = "$borrower->first_name $borrower->last_name borrowed a book titled $book->title by $book->authors from the library";
+
+        $this->auditTrailEvent($title, $action);
         return $this->borrowedBooks();
     }
 
@@ -201,11 +214,25 @@ class LibrariesController extends Controller
         $book->received_by = $user->id;
         $book->save();
 
+        $libraryBook = $book->libraryBook;
+        $borrower = $book->borrower;
+        $title = "Library Book Returned";
+        $action = "$borrower->first_name $borrower->last_name returned a book titled $libraryBook->title by $libraryBook->authors to the library";
+
+        $this->auditTrailEvent($title, $action);
+
         return $this->borrowedBooks();
     }
 
     public function delete(Request $request, LibraryBorrowedBook $book)
     {
+        // $user = $this->getUser();
+        // $libraryBook = $book->libraryBook;
+        // // $borrower = $book->borrower;
+        // $title = "Library Book Deleted";
+        // $action = "$user->first_name deleted a book titled $libraryBook->title by $libraryBook->authors from the library";
+
+        // $this->auditTrailEvent($title, $action);
         $book->delete();
 
         return response()->json([], 204);

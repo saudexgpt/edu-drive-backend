@@ -2,11 +2,12 @@
 
 namespace App\Listeners;
 
-use App\Events\Event;
+use App\Events\AuditTrailEvent;
+use App\Models\AuditTrail;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Contracts\Queue\ShouldQueue;
-use App\AuditTrail;
-class EventListener
+
+class AuditTrailListener
 {
     /**
      * Create the event listener.
@@ -24,10 +25,10 @@ class EventListener
      * @param  Event  $event
      * @return void
      */
-    public function handle(Event $event)
+    public function handle(AuditTrailEvent $event)
     {
         //
-        $audit_trail_obj = new AuditTrail();
-        $audit_trail_obj->addEvent($event->request);
+        // $audit_trail_obj = new AuditTrail();
+        // $audit_trail_obj->addEvent($event->request);
     }
 }

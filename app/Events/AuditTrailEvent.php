@@ -10,20 +10,23 @@ use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Broadcasting\InteractsWithSockets;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Http\Request;
-class Event
+
+class AuditTrailEvent implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    public $request;
+    public $title;
+    public $description;
     /**
      * Create a new event instance.
      *
      * @return void
      */
-    public function __construct(Request $request)
+    public function __construct($title, $description)
     {
         //
-        $this->request = $request;
+        $this->title = $title;
+        $this->description = $description;
     }
 
     /**
@@ -31,8 +34,19 @@ class Event
      *
      * @return Channel|array
      */
+    // public function broadcastOn()
+    // {
+    //     // return new Channel('audit-trail-channel');
+    //     return ['audit-trail-channel'];
+    // }
+
     public function broadcastOn()
     {
         return new PrivateChannel('channel-name');
     }
+
+    // public function broadcastAs()
+    // {
+    //     return 'audit-trail';
+    // }
 }

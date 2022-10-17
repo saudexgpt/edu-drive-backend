@@ -230,9 +230,10 @@ class AttendanceController extends Controller
 
         //$request->subject = 'ClassAttendance';
 
+        $title = 'Class attendance taken';
 
-
-        $action = "marked student attendance in " . $class_teacher->c_class->name . ' for ' . getDateFormatWords($request->date);
+        $action = "students in " . $class_teacher->c_class->name . ' had their attendance taken for ' . getDateFormatWords($request->date);
+        $this->auditTrailEvent($title, $action, $class_teacher->id);
         /*}else {
 
             $sub_attend->subject_teacher_id = $request->option_id;
@@ -252,7 +253,9 @@ class AttendanceController extends Controller
         }   */
 
         //log this activity
-        $this->teacherStudentEventTrail($request, $action, 'class');
+        // $this->teacherStudentEventTrail($request, $action, 'class');
+        // $description = 'logged out of the portal';
+
 
         return 'success';
         //return back()->withInput();
@@ -318,8 +321,10 @@ class AttendanceController extends Controller
         //$request->subject = 'ClassAttendance';
 
 
+        $title = 'Subject attendance taken';
+        $action = "students offering " . $subject_teacher->subject->name . " (" . $subject_teacher->classTeacher->c_class->name . ") had their attendance taken for " . getDateFormatWords($request->date);
 
-        $action = "marked student attendance in " . $subject_teacher->subject->name . " (" . $subject_teacher->classTeacher->c_class->name . ") for " . getDateFormatWords($request->date);
+        $this->auditTrailEvent($title, $action, $subject_teacher->class_teacher_id);
         /*}else {
 
             $sub_attend->subject_teacher_id = $request->option_id;
@@ -339,7 +344,7 @@ class AttendanceController extends Controller
         }   */
 
         //log this activity
-        $this->teacherStudentEventTrail($request, $action, 'subject');
+        // $this->teacherStudentEventTrail($request, $action, 'subject');
 
         return 'success';
         //return back()->withInput();

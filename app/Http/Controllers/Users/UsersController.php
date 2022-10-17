@@ -9,6 +9,7 @@ use App\Models\School;
 use App\Models\Staff;
 use App\Models\State;
 use App\Models\Student;
+use App\Models\StudentsInClass;
 use Auth;
 
 use Illuminate\Http\Request;
@@ -19,11 +20,26 @@ class UsersController extends Controller
     public function userNotifications()
     {
         $user = $this->getUser();
+        // $school = $this->getSchool();
+        // $sess_id = $this->getSession()->id;
         $notifications = $user->notifications()->orderBy('created_at', 'DESC')->take(20)->get();
         $unread_notifications = $user->unreadNotifications()->count();
         // if ($notifications->isEmpty()) {
         //     $notifications = $user->notifications()->orderBy('created_at', 'DESC')->take(20)->get();
         //     // $notifications =
+        // }
+        // $class_teacher_id = '';
+        // if ($user->hasRole('student')) {
+        //     $student_id = $this->getStudent()->id;
+        //     //fetch current class of student
+        //     $student_in_class = StudentsInClass::where(['school_id' => $school->id, 'student_id' => $student_id, 'sess_id' => $sess_id])->orderBy('id', 'DESC')->first();
+        //     $class_teacher_id = $student_in_class->class_teacher_id;
+        // }
+
+        // if ($user->hasRole('staff')) {
+        //     $staff_id = $this->getStaff()->id;
+        //     $class_teacher = ClassTeacher::where(['school_id' => $school->id, 'teacher_id' => $staff_id]);
+        //     //fetch current class of staff
         // }
         return response()->json(compact('notifications', 'unread_notifications'), 200);
     }

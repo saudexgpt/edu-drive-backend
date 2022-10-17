@@ -3,10 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Notifications\Notifiable;
 
 class ClassTeacher extends Model
 {
-
+    use Notifiable;
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
@@ -25,7 +26,10 @@ class ClassTeacher extends Model
     {
         return $this->belongsTo(CClass::class, 'class_id', 'id');
     }
-
+    public function firstStudentInClass()
+    {
+        return $this->hasOne(StudentsInClass::class);
+    }
     public function studentsInClass()
     {
         return $this->hasMany(StudentsInClass::class);

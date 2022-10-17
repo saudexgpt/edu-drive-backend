@@ -28,7 +28,7 @@ class ClassesController extends Controller
         $term_id = $this->getTerm()->id;
 
         // $classTeacher = new ClassTeacher();
-        $class_teachers = ClassTeacher::with('c_class', 'level', 'staff.user')->where('school_id', $school_id)->get();
+        $class_teachers = ClassTeacher::with('c_class', 'level', 'staff.user', 'firstStudentInClass')->where('school_id', $school_id)->get();
 
         $sections = Section::where('school_id', $school_id)->get();
         $levels = $this->getLevels();
@@ -389,5 +389,14 @@ class ClassesController extends Controller
         if ($ratings == 'behaviour') {
             $behavior_obj->rateStudent($school_id, $sess_id, $term_id, $value, $student_id, $field);
         }
+    }
+
+    public function destroy(Request $request, ClassTeacher $class_teacher)
+    {
+        $class = $class_teacher->c_class;
+        $class->delete();
+        $class_teacher->delete();
+
+        return response()->json([], 204);
     }
 }

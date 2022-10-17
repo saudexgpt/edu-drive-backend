@@ -116,9 +116,15 @@ class AuthController extends Controller
         }
 
         $user = $request->user();
+        $name = $user->first_name . ' ' . $user->last_name . ' (' . $user->username . ')';
+        $title = "Log in action";
+        //log this event
+        $description = "$name logged in to the portal";
+        $this->auditTrailEvent($title, $description);
+
         return $this->generateAuthorizationKey($user);
     }
-    private function generateAuthorizationKey($user)
+    private function generateAuthorizationKey($user, $saveToken = true)
     {
         if ($user->is_confirmed === '0') {
             return response()->json(['message' => 'Account Activation Needed'], 403);
@@ -127,6 +133,11 @@ class AuthController extends Controller
         $tokenResult = $user->createToken('Personal Access Token');
         $token = $tokenResult->plainTextToken;
 
+        if ($saveToken) {
+
+            $user->api_token = $token;
+            $user->save();
+        }
         // return response()->json([
         //     'user_data' => $user_resource
         // ])->header('Authorization', $token);
@@ -158,13 +169,18 @@ class AuthController extends Controller
     // }
     public function logout(Request $request)
     {
-        //return $request;
+        // return $request;
         // $this->guard()->logout();
 
         // $request->session()->invalidate();
         // $request->user()->tokens()->delete();
+
+        // log this event
+        // $description = 'logged out of the portal';
+        // $this->auditTrailEvent($request, $description);
+
         $request->user()->currentAccessToken()->delete();
-        if (isset($request->school_id)) {
+        if (isset($request->school_id) && $request->school_id !== '') {
             $school_id = $request->school_id;
             $admin_role_id = 1;
             //$school = School::find($school_id);
@@ -173,12 +189,12 @@ class AuthController extends Controller
 
 
             $user = $staff->user;
-            return $this->generateAuthorizationKey($user);
+            return $this->generateAuthorizationKey($user, false);
         }
-        if (isset($request->user_id)) {
+        if (isset($request->user_id) && $request->user_id !== '') {
 
             $user = User::find($request->user_id);
-            return $this->generateAuthorizationKey($user);
+            return $this->generateAuthorizationKey($user, false);
             // if (Auth::loginUsingId($user_id)) {
             //     // Authentication passed...
             //     return redirect()->intended('dashboard');

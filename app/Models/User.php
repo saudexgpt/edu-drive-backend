@@ -38,7 +38,8 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
-        'confirm_hash'
+        'confirm_hash',
+        'api_token'
     ];
 
     /**
@@ -424,4 +425,15 @@ class User extends Authenticatable
 
         return false;
     }
+
+    // public function routeNotificationFor($channel)
+    // {
+    //     if ($channel === 'PusherPushNotifications') {
+    //         return 'App.Models.User.{id}';
+    //     }
+
+    //     $class = str_replace('\\', '.', get_class($this));
+
+    //     return $class . '.' . $this->getKey();
+    // }
 }

@@ -725,6 +725,7 @@ class ResultsController extends Controller
 
     public function resultAction(Request $request)
     {
+        $user = $this->getUser();
         $subject_teacher_id = $request->id;
         $term_id = $request->term_id; //selected term
 
@@ -757,10 +758,11 @@ class ResultsController extends Controller
 
         if ($action != 'save') {
             $request->class_teacher_id = $subject_teacher->class_teacher_id;
+            $title = "Result " . ucwords($action);
             //we dont want to record save events...intead we want submit,approve, publish, disapprove etc
-            $event_action = ucwords($action) . " students " . $subject . " " . ucwords($assessment) . "-Term result for " . $class->name;
+            $action = $user->first_name . " " . ucwords($action) . " students " . $subject . " " . ucwords($assessment) . "-Term result for " . $class->name;
 
-            $this->teacherStudentEventTrail($request, $event_action, 'class');
+            $this->auditTrailEvent($title, $action, $subject_teacher->class_teacher_id);
             //$this->auditTrailEvent($request, $event_action);
 
         }
@@ -1113,6 +1115,7 @@ class ResultsController extends Controller
     public function getRecordedResultForApproval(Request $request)
     {
         $result = new Result();
+        $user = $this->getUser();
         $class_teacher_id = $request->class_teacher_id;
         $school_id = $this->getSchool()->id;
         $sess_id = $request->sess_id;
@@ -1169,11 +1172,17 @@ class ResultsController extends Controller
 
                     if ($class_event < 1) {
                         $request->class_teacher_id = $subject_teacher->class_teacher_id;
-                        //we dont want to record save events...intead we want submit,approve, publish, disapprove etc
-                        $event_action = ucwords($action) . " students " . ucwords($assessment) . "-Term result for " . $class_details->c_class->name;
-                        //$request = json_encode($request);
 
-                        $this->teacherStudentEventTrail($request, $event_action, 'class');
+                        $title = "Result " . ucwords($action);
+                        //we dont want to record save events...intead we want submit,approve, publish, disapprove etc
+                        $action = $user->first_name . " " . ucwords($action) . " students " . ucwords($assessment) . "-Term result for " . $class_details->c_class->name;
+
+                        $this->auditTrailEvent($title, $action, $class_details->id);
+                        //we dont want to record save events...intead we want submit,approve, publish, disapprove etc
+                        // $event_action = ucwords($action) . " students " . ucwords($assessment) . "-Term result for " . $class_details->c_class->name;
+                        // //$request = json_encode($request);
+
+                        // $this->teacherStudentEventTrail($request, $event_action, 'class');
                         //$this->auditTrailEvent($request, $event_action);
 
                         $class_event++;

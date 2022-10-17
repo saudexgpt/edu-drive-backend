@@ -56,6 +56,8 @@ class CurriculaController extends Controller
         $term_id = $this->getTerm()->id;
 
         $subject_teacher_id = $request->subject_teacher_id;
+        $subject_teacher = SubjectTeacher::with('classTeacher', 'subject')->find($subject_teacher_id);
+
         $description = $request->description;
         $title = $request->title;
         $week = $request->week;
@@ -64,6 +66,15 @@ class CurriculaController extends Controller
 
         if (!$curriculum) {
             $curriculum = new Curriculum();
+
+            $title = "Lesson Note Uploaded";
+            $action = "Lesson notes for " . $subject_teacher->subject->name . " (" . $subject_teacher->classTeacher->c_class->name . ") was uploaded";
+            $this->auditTrailEvent($title, $action, $subject_teacher->class_teacher_id);
+        } else {
+            $title = "Lesson Note Updated";
+            $action = "Lesson notes for " . $subject_teacher->subject->name . " (" . $subject_teacher->classTeacher->c_class->name . ") was updated";
+
+            $this->auditTrailEvent($title, $action, $subject_teacher->class_teacher_id);
         }
         $curriculum->school_id = $school->id;
         $curriculum->teacher_id = $teacher_id;
@@ -73,6 +84,7 @@ class CurriculaController extends Controller
         $curriculum->description = $description;
         $curriculum->week = $week;
         $curriculum->save();
+
         return response()->json([], 204);
     }
 
@@ -136,7 +148,7 @@ class CurriculaController extends Controller
     {
         $school_id = $this->getSchool()->id;
         $term_id = $this->getTerm()->id;
-        $curriculum = Curriculum::where(['school_id' => $school_id, 'term_id' => $term_id, 'subject_teacher_id' => $subject_teacher->id])->get();
+        $curriculum = Curriculum::with('teacher.user')->where(['school_id' => $school_id, 'term_id' => $term_id, 'subject_teacher_id' => $subject_teacher->id])->get();
         return response()->json(compact('curriculum'), 200);
     }
 }

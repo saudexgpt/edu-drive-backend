@@ -319,13 +319,17 @@ class Student extends Model
     //     return array($student, $parent, $class, $subject);
     // }
 
-    public function getStudentDetails($school, $student_id, $class_teacher_id)
+    public function getStudentDetails($school, $student_id)
     {
         $result = new Result();
         $curriculum_level_groups = CurriculumLevelGroup::where('curriculum', $school->curriculum)->get();
-        $student = Student::with(['school.lga', 'studentGuardian.guardian.user', 'user.state', 'user.lga', 'classTeacher.c_class',  'classTeacher.level', 'classTeacher.staff.user', 'classTeacher.subjectTeachers.staff.user', 'behaviors', 'skills', 'results.subjectTeacher.subject'])->find($student_id);
 
+        // $student = Student::with(['school.lga', 'studentGuardian.guardian.user', 'user.state', 'user.lga', 'classTeacher.c_class',  'classTeacher.level', 'classTeacher.staff.user', 'classTeacher.subjectTeachers.staff.user', 'behaviors', 'skills', 'results.subjectTeacher.subject'])->find($student_id);
+        $student_in_class =  StudentsInClass::with('classTeacher.c_class', 'classTeacher.staff.user', 'classTeacher.subjectTeachers.staff.user')->where('student_id', $student_id)->orderBy('id', 'DESC')->first();
 
+        $student = Student::with([
+            'school.lga', 'studentGuardian.guardian.user', 'user.state', 'user.lga', 'currentStudentLevel', 'behaviors', 'skills'
+        ])->find($student_id);
         //get class/class_teacher details
         // $student->class_teacher = $this->getClassTeacherDetails($class_teacher_id);
 
@@ -335,7 +339,7 @@ class Student extends Model
 
         $subject_performances = [];
         foreach ($curriculum_level_groups as $curriculum_level_group) {
-            $curriculum_level_group_subjects = Subject::where('curriculum_level_group_id', $curriculum_level_group->id)->orderBy('name')->get();
+            $curriculum_level_group_subjects = Subject::where(['school_id' => $school->id, 'curriculum_level_group_id' => $curriculum_level_group->id])->orderBy('name')->get();
 
             $grades = Grade::where(['school_id' => $school->id, 'curriculum_level_group_id' => $curriculum_level_group->id])->get();
 
@@ -343,7 +347,9 @@ class Student extends Model
 
                 $subject_avg = Result::join('subject_teachers', 'subject_teachers.id', '=', 'results.subject_teacher_id')
                     ->join('subjects', 'subject_teachers.subject_id', '=', 'subjects.id')
-                    ->where(['student_id' => $student_id, 'subjects.id' => $curriculum_level_group_subject->id])->avg('total');
+                    ->where(['student_id' => $student_id, 'subjects.id' => $curriculum_level_group_subject->id])
+                    // ->where('fullterm_status', 'published')
+                    ->avg('total');
                 if ($subject_avg < 1) {
                     break;
                 }
@@ -351,10 +357,11 @@ class Student extends Model
 
                 $curriculum_level_group_subject->avg  = sprintf("%01.1f", $subject_avg);
                 $curriculum_level_group_subject->color  = $color;
-                $subject_performances[] = $curriculum_level_group_subject;
+                $subject_performances[$curriculum_level_group->name][] = $curriculum_level_group_subject;
             }
         }
         $student->subject_performances = $subject_performances;
+        $student->class_teacher = $student_in_class->classTeacher;
         //$results = $student->results()->with('subjectTeacher.subject')->get();
 
         // $subjects = [];

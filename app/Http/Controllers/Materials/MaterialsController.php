@@ -81,6 +81,7 @@ class MaterialsController extends Controller
         $folder = "schools/" . $folder_key . '/materials';
 
         $subject_teacher_id = $request->subject_teacher_id;
+        $subject_teacher = SubjectTeacher::with('classTeacher', 'subject')->find($subject_teacher_id);
         $title = $request->title;
 
         $teacher_id = $this->getStaff()->id;
@@ -97,6 +98,10 @@ class MaterialsController extends Controller
             $inputs['school_id'] = $this->getSchool()->id;
             $inputs['subject_teacher_id'] = $subject_teacher_id;
             $material->create($inputs);
+
+            $title = "Study Material Uploaded";
+            $action = "Study material titled $title for " . $subject_teacher->subject->name . " (" . $subject_teacher->classTeacher->c_class->name . ") was uploaded";
+            $this->auditTrailEvent($title, $action, $subject_teacher->class_teacher_id);
 
             return response()->json([], 200);
         }

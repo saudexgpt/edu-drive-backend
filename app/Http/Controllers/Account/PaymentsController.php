@@ -17,7 +17,7 @@ use App\Models\SchoolFee;
 use App\Models\StaffLevel;
 use App\Models\StaffSalaryPayment;
 use App\Models\IncomeAndExpense;
-
+use App\Models\StudentsInClass;
 use Illuminate\Http\Request;
 
 class PaymentsController extends Controller
@@ -81,29 +81,29 @@ class PaymentsController extends Controller
 
         return $this->render(compact('payment_monitors'), 200);
     }
-    public function otherFeePayments(Request $request)
-    {
-        $school_id = $this->getSchool()->id;
-        $sess_id = $this->getSession()->id;
-        $term_id = $this->getTerm()->id;
-        $level_id = $request->level_id;
-        $other_fee_payments = OtherFeePayment::with(
-            'student.user',
-            'level',
-            'otherFee',
-            'session',
-            'term'
-        )
-            ->where([
-                'school_id' => $school_id,
-                'sess_id' => $sess_id,
-                'term_id' => $term_id,
-                'level_id' => $level_id
-            ])
-            ->get();
+    // public function otherFeePayments(Request $request)
+    // {
+    //     $school_id = $this->getSchool()->id;
+    //     $sess_id = $this->getSession()->id;
+    //     $term_id = $this->getTerm()->id;
+    //     $level_id = $request->level_id;
+    //     $other_fee_payments = OtherFeePayment::with(
+    //         'student.user',
+    //         'level',
+    //         'otherFee',
+    //         'session',
+    //         'term'
+    //     )
+    //         ->where([
+    //             'school_id' => $school_id,
+    //             'sess_id' => $sess_id,
+    //             'term_id' => $term_id,
+    //             'level_id' => $level_id
+    //         ])
+    //         ->get();
 
-        return response()->json(compact('other_fee_payments'), 200);
-    }
+    //     return response()->json(compact('other_fee_payments'), 200);
+    // }
     // public function feeCollectionTable(Request $request)
     // {
     //     $school_id = $this->getSchool()->id;
@@ -176,7 +176,7 @@ class PaymentsController extends Controller
     // }
     public function payViaCash(Request $request)
     {
-        $logged_by = $this->getUser()->id;
+        $user = $this->getUser();
         $school_id = $this->getSchool()->id;
         $receipt_no = $request->receipt_no;
 
@@ -194,14 +194,22 @@ class PaymentsController extends Controller
         $school_fee_payment->pay_date = date('Y-m-d', strtotime('now')); // $request->pay_date;
         $school_fee_payment->student_id = $request->student_id;
         $school_fee_payment->fee_payment_monitor_id = $request->fee_payment_monitor_id;
-        $school_fee_payment->logged_by = $logged_by;
+        $school_fee_payment->logged_by = $user->id;
         $school_fee_payment->save();
+
+        $student = Student::with('user')->find($request->student_id);
+        $student_name = $student->user->first_name . ' ' . $student->user->last_name;
+
+        $title = "Fee payment";
+        $action = "cash payment with reference number $receipt_no, was made for " . $student_name . " by $user->first_name. ' '. $user->last_name";
+        $this->auditTrailEvent($title, $action);
+
         return response()->json([], 200);
     }
 
     public function payViaCard(Request $request)
     {
-        $logged_by = $this->getUser()->id;
+        $user = $this->getUser();
         $school_id = $this->getSchool()->id;
         $transaction = $request->transaction;
         $reference = $request->reference;
@@ -224,10 +232,16 @@ class PaymentsController extends Controller
         $school_fee_payment->pay_date = date('Y-m-d', strtotime('now')); // $request->pay_date;
         $school_fee_payment->student_id = $request->student_id;
         $school_fee_payment->fee_payment_monitor_id = $request->fee_payment_monitor_id;
-        $school_fee_payment->logged_by = $logged_by;
+        $school_fee_payment->logged_by = $user->id;
         $school_fee_payment->save();
         if ($message == 'Approved' && $status == 'success') {
             $this->approveFeePayment($request, $school_fee_payment);
+
+            $student = Student::with('user')->find($request->student_id);
+            $student_name = $student->user->first_name . ' ' . $student->user->last_name;
+            $title = "Fee payment";
+            $action = "card payment, with reference number $reference, was made for " . $student_name . " by $user->first_name. ' '. $user->last_name";
+            $this->auditTrailEvent($title, $action);
         }
         return response()->json([], 200);
     }
@@ -649,6 +663,42 @@ class PaymentsController extends Controller
 
 
         return response()->json([], 200);
+    }
+
+    public function debtorsList($level_id)
+    {
+        $school_id = $this->getSchool()->id;
+
+
+        $students = Student::with(['user', 'feePaymentMonitor' => function ($q) use ($school_id) {
+            $q->where('school_id', $school_id);
+            $q->whereRaw('total_fee - amount_paid > 0');
+        }, 'feePaymentMonitor.session', 'feePaymentMonitor.term', 'feePaymentMonitor.level'])->where('school_id', $school_id)->where('current_level', $level_id)->get();
+
+        $debtors = [];
+
+        foreach ($students as $student) {
+            if ($student->feePaymentMonitor->isNotEmpty()) {
+                $total_debt = 0;
+
+                foreach ($student->feePaymentMonitor as $fee_debt) {
+                    $total_debt += $fee_debt->total_fee - $fee_debt->amount_paid;
+                }
+                $student_class = StudentsInClass::with('classTeacher.c_class')
+                    ->where('school_id', $school_id)
+                    ->where('student_id', $student->id)
+                    ->orderBy('id', 'DESC')
+                    ->first();
+
+                $class = $student_class->classTeacher->c_class->name;
+
+                $student->class = $class;
+                $student->total_debt = $total_debt;
+
+                $debtors[] = $student;
+            }
+        }
+        return $this->render(compact('debtors'), 200);
     }
 
     // public function deleteOtherFeePayment(Request $request)

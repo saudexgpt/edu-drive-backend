@@ -67,7 +67,7 @@ class AssignmentsController extends Controller
     {
         //
         $school = $this->getSchool(); //new object of school
-
+        $subject_teacher = SubjectTeacher::with('classTeacher', 'subject')->find($request->subject_teacher_id);
         // $folder_key = $school->getFolderKey($this->getSchool()->id);
         // $today = todayDate();
         //$folder = "schools/".$folder_key.'/assignments/'.$today;
@@ -84,10 +84,12 @@ class AssignmentsController extends Controller
         $inputs['sess_id'] = $this->getSession()->id;
         $inputs['term_id'] = $this->getTerm()->id;
         $assignment->create($inputs);
-        $action = "Added new assignment";
-        //log this event
-        $this->teacherStudentEventTrail($request, $action, 'subject');
-        $this->auditTrailEvent($request, $action);
+
+        //log this action
+        $title = 'New assignment given';
+        $action = "new assignment for students offering " . $subject_teacher->subject->name . " (" . $subject_teacher->classTeacher->c_class->name . "), was given by the subject teacher";
+
+        $this->auditTrailEvent($title, $action, $subject_teacher->class_teacher_id);
         // return redirect()->route('assignments.index');
 
         //}

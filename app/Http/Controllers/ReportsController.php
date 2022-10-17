@@ -388,13 +388,13 @@ class ReportsController extends Controller
                 'name' => 'Male',
                 'data' => $male, //array format
                 // 'color' => '#00c0ef',
-                'dataLabels' => $dataLabels
+                // 'dataLabels' => $dataLabels
             ],
             [
                 'name' => 'Female',
                 'data' => $female, //array format
                 // 'color' => '#DC143C',
-                'dataLabels' => $dataLabels
+                // 'dataLabels' => $dataLabels
             ],
             // [
             //     'name' => 'Total',
@@ -1096,7 +1096,11 @@ class ReportsController extends Controller
         $school_id = $this->getSchool()->id;
         $sess_id = $this->getSession()->id;
         $term_id = $this->getTerm()->id;
-        $sess_id = $request['sess_id'];
+        if (isset($request['sess_id'], $request['term_id']) && $request['sess_id'] !== '' && $request['term_id'] !== '') {
+            $sess_id = $request['sess_id'];
+            // $term_id = $request['term_id'];
+        }
+        // $sess_id = $request['sess_id'];
 
         // $day = (int) (date('d', strtotime($date)));
         // $month_int = date('m', strtotime($date));
@@ -1109,7 +1113,7 @@ class ReportsController extends Controller
         $income_n_expenses = IncomeAndExpense::selectRaw('SUM(amount) as sum, status, term_id')
             ->groupBy('term_id', 'status')
             ->where('deletable', '0')
-            ->where(['school_id' => $school_id, 'sess_id' => $sess_id])
+            ->where(['school_id' => $school_id, 'sess_id' => $sess_id/*, 'term_id' => $term_id*/])
             ->get();
         $income_data = [0, 0, 0];
         $expenses_data = [0, 0, 0];
@@ -1124,8 +1128,8 @@ class ReportsController extends Controller
                 $total_income += $sum;
             }
             if ($income_n_expense->status === 'expenses') {
-                // $expenses_data[$term_id - 1] = $sum;
-                $expenses_data[$term_id - 1] = $sum * -1; // we want to make the expenses negative
+                $expenses_data[$term_id - 1] = $sum;
+                // $expenses_data[$term_id - 1] = $sum * -1; // we want to make the expenses negative
                 $total_expenses += $sum;
             }
         }

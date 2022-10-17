@@ -367,7 +367,16 @@ class SubjectsController extends Controller
         }
         return $this->render(compact('subject_teachers'));
     }
+    public function enableSubject(Request $request, Subject $subject)
+    {
+        $subject->enabled = $request->status;
+        $subject->save();
+        $school_id = $this->getSchool()->id;
+        $curriculum_level_group_id = $subject->curriculum_level_group_id;
+        $subjects = Subject::where(['school_id' => $school_id, 'curriculum_level_group_id' => $curriculum_level_group_id])->orderBy('id', 'DESC')->get();
 
+        return response()->json(compact('subjects'), 200);
+    }
     public function destroy(Request $request, Subject $subject)
     {
         return response()->json(['message' => 'Subject deletion is disabled'], 500);

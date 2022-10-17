@@ -88,9 +88,9 @@ class StaffController extends Controller
             // $staff_role_obj = new StaffRole();
             // $staff_role_obj->addStaffRole($staff_id, $request->school_id, $request->roles);
             $this->updateUniqNumDb($this->getschool()->id, 'staff');
-
+            $title  = "New Staff Registration";
             $action = "Registered " . $request->first_name . " " . $request->last_name . " as new staff";
-            $this->auditTrailEvent($request, $action);
+            $this->auditTrailEvent($title, $action);
             //$new_user = User::find($request->student_user_id);
             //$all_staff = User::where('role', 'staff')->get();
             //$user->notify(new NewRegistration($user));
@@ -204,7 +204,7 @@ class StaffController extends Controller
      */
     public function show($id)
     {
-        $staff = Staff::with(['user.state', 'user.lga', 'classTeachers.c_class', 'subjectTeachers' => function ($q) {
+        $staff = Staff::with(['school', 'user.state', 'user.lga', 'classTeachers.c_class', 'subjectTeachers' => function ($q) {
             $q->orderBy('class_teacher_id');
         }, 'subjectTeachers.classTeacher.c_class', 'subjectTeachers.subject'])->findOrFail($id);
         return $this->render(compact('staff'));

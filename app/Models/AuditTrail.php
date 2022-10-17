@@ -20,12 +20,18 @@ class AuditTrail extends Model
         $name = $request->actor_name;
         $role = $request->actor_role;
         $school_id = $request->school_id;
+        $sess_id = $request->sess_id;
+        $term_id = $request->term_id;
+        $class_teacher_id = $request->class_teacher_id;
         $actor_action = $request->action;
 
 
-        $audit_trail = $this; //new AuditTrail();
+        $audit_trail = new AuditTrail();
 
         $audit_trail->school_id = $school_id;
+        $audit_trail->sess_id = $sess_id;
+        $audit_trail->term_id = $term_id;
+        $audit_trail->class_teacher_id = $class_teacher_id;
         $audit_trail->actor_id = $id;
         $audit_trail->role = $role;
         $audit_trail->name = $name;
