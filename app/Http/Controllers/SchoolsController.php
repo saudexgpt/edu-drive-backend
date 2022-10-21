@@ -268,13 +268,13 @@ class SchoolsController extends Controller
         }
         $registered_school = $school->registerSchool($request, $user_id);
         if ($registered_school === 'Exist') {
-            return response()->json(["This School's information already exist"], 204);
+            return "This School's information already exist";
             # code...
         }
         // $request->school_id = $registered_school->id;
         // send mail to admin
 
-        return response()->json(["Registration Successful"], 200);
+        return "Registration Successful";
     }
     public function potentialSchools()
     {
