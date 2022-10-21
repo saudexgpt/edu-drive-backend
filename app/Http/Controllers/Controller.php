@@ -631,26 +631,31 @@ class Controller extends BaseController
     {
 
         $user = $this->getUser();
+        $users = User::where('role', 'super')->get();
         if ($user) {
-            if ($user->role == 'super') {
-                return false;
-            }
-            if (($user->role == "staff")) {
-                $user_school_id = Staff::where('user_id', $user->id)->first()->school_id;
-                $this->setSchool($user_school_id);
-            } else if ($user->role == "student") {
+            if ($user->role !== 'company-staff') {
+                # code...
 
-                $user_school_id = Student::where('user_id', $user->id)->first()->school_id;
-                $this->setSchool($user_school_id);
-            } else if ($user->role == "parent") {
-                $user_school_id = Guardian::where('user_id', $user->id)->first()->school_id;
-                $this->setSchool($user_school_id);
+                if ($user->role == 'super') {
+                    return false;
+                }
+                if (($user->role == "staff")) {
+                    $user_school_id = Staff::where('user_id', $user->id)->first()->school_id;
+                    $this->setSchool($user_school_id);
+                } else if ($user->role == "student") {
+
+                    $user_school_id = Student::where('user_id', $user->id)->first()->school_id;
+                    $this->setSchool($user_school_id);
+                } else if ($user->role == "parent") {
+                    $user_school_id = Guardian::where('user_id', $user->id)->first()->school_id;
+                    $this->setSchool($user_school_id);
+                }
+                $sess_id = $this->getSession()->id;
+                // fetch admin
+                $users = $users->merge($this->getSchoolAdmins($user_school_id));
+                $class_communities = $this->getClassCommunity($user_school_id, $sess_id, $class_teacher_id);
+                $users = $users->merge($class_communities);
             }
-            $sess_id = $this->getSession()->id;
-            // fetch admin
-            $users = $this->getSchoolAdmins($user_school_id);
-            $class_communities = $this->getClassCommunity($user_school_id, $sess_id, $class_teacher_id);
-            $users = $users->merge($class_communities);
         }
 
         $notification = new AuditTrail($title, $action);

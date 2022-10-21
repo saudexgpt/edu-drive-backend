@@ -538,7 +538,8 @@ class Result extends Model
                     )->first();
 
                     $sub_id = $subject_teacher->id;
-                    $subject_name = $subject_teacher->subject->code;
+                    $subject_name =
+                        $subject_teacher->subject->code; // $subject_teacher->subject->name;
 
                     $subjects[$sub_id] = $subject_name;
                     if ($student_result) {
