@@ -375,7 +375,7 @@ class SchoolsController extends Controller
 
 
             //send activation email
-            \Mail::to($user)->send(new AdminRegistrationConfirmation($user));
+            // \Mail::to($user)->send(new AdminRegistrationConfirmation($user));
             // Flash::success('Registration successfully. Please login to your mail: ' . $request->email . ' for more information.');
         } else if ($status == "exists") {
             // Flash::warning('School Registered. However user already exist.');

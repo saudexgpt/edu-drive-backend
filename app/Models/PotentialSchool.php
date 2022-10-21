@@ -51,7 +51,7 @@ class PotentialSchool extends Model
             $school->admin_email = $request->admin_email;
             $school->admin_phone1 = $request->admin_phone1;
             $school->admin_phone2 = $request->admin_phone2;
-            $school->admin_gender = $request->admin_gender;
+            $school->admin_gender = (isset($request->admin_gender)) ? $request->admin_gender : 'Male';
 
             $school->name = $request->name;
             $school->slug = strtoupper($request->slug);
