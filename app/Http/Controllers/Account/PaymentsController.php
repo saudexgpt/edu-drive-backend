@@ -201,7 +201,7 @@ class PaymentsController extends Controller
         $student_name = $student->user->first_name . ' ' . $student->user->last_name;
 
         $title = "Fee payment";
-        $action = "cash payment with reference number $receipt_no, was made for " . $student_name . " by $user->first_name. ' '. $user->last_name";
+        $action = "cash payment with reference number $receipt_no, was made for " . $student_name . " by $user->first_name $user->last_name";
         $this->auditTrailEvent($title, $action);
 
         return response()->json([], 200);
@@ -240,7 +240,7 @@ class PaymentsController extends Controller
             $student = Student::with('user')->find($request->student_id);
             $student_name = $student->user->first_name . ' ' . $student->user->last_name;
             $title = "Fee payment";
-            $action = "card payment, with reference number $reference, was made for " . $student_name . " by $user->first_name. ' '. $user->last_name";
+            $action = "card payment, with reference number $reference, was made for " . $student_name . " by $user->first_name $user->last_name";
             $this->auditTrailEvent($title, $action);
         }
         return response()->json([], 200);
