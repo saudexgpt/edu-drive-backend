@@ -843,7 +843,7 @@ class ResultsController extends Controller
         $sub_term = $request->sub_term;
 
 
-        $students_in_class = StudentsInClass::with([
+        $all_students_in_class = StudentsInClass::with([
             'student.user',
             'classTeacher.subjectTeachers.subject'
         ])->where([
@@ -856,84 +856,89 @@ class ResultsController extends Controller
         $result_averages = []; //keep the averages for each student in an array to eable ranking
         $result_subjects = [];
         $result_details = [];
-        if ($students_in_class->isNotEmpty()) {
-            foreach ($students_in_class as $student_in_class) {
+        $students_in_class = [];
+        if ($all_students_in_class->isNotEmpty()) {
+            foreach ($all_students_in_class as $student_in_class) {
                 $student = $student_in_class->student;
 
-                $options = [
-                    'class_teacher_id' => $class_teacher_id,
-                    'school_id' => $school_id,
-                    'sess_id' => $sess_id,
-                    'term' => $term_id,
-                    'sub_term' => $sub_term,
-                    'grades' => $grades,
-                    'result_settings' => $result_settings,
-                ];
-                $student_result = $result->analyseStudentsResult($student, $options);
+                if ($student->studentship_status !== 'left') {
 
-                $result_averages[$student_in_class->student_id] = $student_result->average; //keep the averages for each student in an array to eable ranking
-                //if(!empty($student_result->subjects)){
-                // $result_subjects = SubjectTeacher::with('subject')->where([
-                //     'class_teacher_id' => $class_teacher_id,
-                //     'school_id' => $school_id
-                // ])->orderBy('id')->get();
-                $result_subjects = array_unique(array_merge($result_subjects, $student_result->subjects));
-                //}
+                    $options = [
+                        'class_teacher_id' => $class_teacher_id,
+                        'school_id' => $school_id,
+                        'sess_id' => $sess_id,
+                        'term' => $term_id,
+                        'sub_term' => $sub_term,
+                        'grades' => $grades,
+                        'result_settings' => $result_settings,
+                    ];
+                    $student_result = $result->analyseStudentsResult($student, $options);
+
+                    $result_averages[$student_in_class->student_id] = $student_result->average; //keep the averages for each student in an array to eable ranking
+                    //if(!empty($student_result->subjects)){
+                    // $result_subjects = SubjectTeacher::with('subject')->where([
+                    //     'class_teacher_id' => $class_teacher_id,
+                    //     'school_id' => $school_id
+                    // ])->orderBy('id')->get();
+                    $result_subjects = array_unique(array_merge($result_subjects, $student_result->subjects));
+                    //}
 
 
-                $student_in_class->student_result = $student_result;
+                    $student_in_class->student_result = $student_result;
 
-                $result_details[$student_in_class->student_id] = $student_result->result_details;
+                    $result_details[$student_in_class->student_id] = $student_result->result_details;
 
-                $student_remark = Remark::where([
-                    'class_teacher_id' => $class_teacher_id,
-                    'school_id' => $school_id,
-                    'sess_id' => $sess_id,
-                    'term_id' => $term_id,
-                    'sub_term' => $sub_term,
-                    'student_id' => $student->id
-                ])->first();
-                if (!$student_remark) {
+                    $student_remark = Remark::where([
+                        'class_teacher_id' => $class_teacher_id,
+                        'school_id' => $school_id,
+                        'sess_id' => $sess_id,
+                        'term_id' => $term_id,
+                        'sub_term' => $sub_term,
+                        'student_id' => $student->id
+                    ])->first();
+                    if (!$student_remark) {
 
-                    $student_remark = new Remark();
-                    $student_remark->school_id = $school_id;
-                    $student_remark->class_teacher_id = $class_teacher_id;
-                    $student_remark->sess_id = $sess_id;
-                    $student_remark->term_id = $term_id;
-                    $student_remark->sub_term = $sub_term;
-                    $student_remark->student_id = $student->id;
-                    $student_remark->teacher_id = $student_in_class->classTeacher->teacher_id;
-                    $student_remark->class_teacher_status == 'default';
-                    $student_remark->head_teacher_status == 'default';
-                }
-
-                $student_name = ucwords(strtolower($student->user->first_name . ' ' . $student->user->last_name));
-                if ($student_remark->class_teacher_status == 'default') {
-                    $student_remark->class_teacher_remark = ResultComment::getComment($student_name,    $student_result->result_details_array, $student_result->average, 'class_teacher');
-                }
-
-                if ($student_remark->head_teacher_status == 'default') {
-                    $student_remark->head_teacher_remark = ResultComment::getComment($student_name, $student_result->result_details_array, $student_result->average, 'head_teacher');
-                }
-
-                //this does the auto remark for each student
-
-                $student_remark->save();
-
-                $can_give_principal_remark = false;
-                $can_give_teacher_remark = false;
-                if ($user->hasRole('admin') || $user->hasRole('principal')) {
-                    $can_give_principal_remark = true;
-                }
-                if ($this->getStaff()) {
-                    if ($this->getStaff()->id === $class_teacher->teacher_id) {
-                        $can_give_teacher_remark = true;
+                        $student_remark = new Remark();
+                        $student_remark->school_id = $school_id;
+                        $student_remark->class_teacher_id = $class_teacher_id;
+                        $student_remark->sess_id = $sess_id;
+                        $student_remark->term_id = $term_id;
+                        $student_remark->sub_term = $sub_term;
+                        $student_remark->student_id = $student->id;
+                        $student_remark->teacher_id = $student_in_class->classTeacher->teacher_id;
+                        $student_remark->class_teacher_status == 'default';
+                        $student_remark->head_teacher_status == 'default';
                     }
-                }
-                $student_in_class->student_remark = $student_remark;
-                //$head_teacher_remarks[$student->id] = $student_remark->head_teacher_remark;
-                //$class_teacher_remarks[$student->id] = $student_remark->class_teacher_remark;
 
+                    $student_name = ucwords(strtolower($student->user->first_name . ' ' . $student->user->last_name));
+                    if ($student_remark->class_teacher_status == 'default') {
+                        $student_remark->class_teacher_remark = ResultComment::getComment($student_name,    $student_result->result_details_array, $student_result->average, 'class_teacher');
+                    }
+
+                    if ($student_remark->head_teacher_status == 'default') {
+                        $student_remark->head_teacher_remark = ResultComment::getComment($student_name, $student_result->result_details_array, $student_result->average, 'head_teacher');
+                    }
+
+                    //this does the auto remark for each student
+
+                    $student_remark->save();
+
+                    $can_give_principal_remark = false;
+                    $can_give_teacher_remark = false;
+                    if ($user->hasRole('admin') || $user->hasRole('principal')) {
+                        $can_give_principal_remark = true;
+                    }
+                    if ($this->getStaff()) {
+                        if ($this->getStaff()->id === $class_teacher->teacher_id) {
+                            $can_give_teacher_remark = true;
+                        }
+                    }
+                    $student_in_class->student_remark = $student_remark;
+
+                    $students_in_class[] = $student_in_class;
+                    //$head_teacher_remarks[$student->id] = $student_remark->head_teacher_remark;
+                    //$class_teacher_remarks[$student->id] = $student_remark->class_teacher_remark;
+                }
             }
 
 

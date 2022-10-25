@@ -61,7 +61,7 @@ class UserResource extends JsonResource
 
             if ($active == 0) {
                 $suspended_for_nonpayment = 1;
-                $school->suspended_for_nonpayment = 1;
+                // $school->suspended_for_nonpayment = 1;
             }
         }
         if ($this->staff) {
