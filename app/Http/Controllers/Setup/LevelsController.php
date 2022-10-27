@@ -164,6 +164,7 @@ class LevelsController extends Controller
         //return $request->level;
 
         $level->level = $request->level;
+        $level->curriculum_level_group_id = $request->curriculum_level_group_id;
         // $level->level_group = $request->level_group;
         $level->description = $request->description;
         $level->save();

@@ -160,13 +160,13 @@ class SubjectsController extends Controller
      */
     public function store(Request $request, Subject $subject)
     {
-
+        $school_id = $this->getSchool()->id;
         $name = $request->name;
         $subject->code = $request->code;
         $level_groups = $request->level_group;
 
         foreach ($level_groups as $level_group) {
-            $subject = Subject::where(['school_id' => $this->getSchool()->id, 'curriculum_level_group_id' => $level_group, 'name' => $name])->first();
+            $subject = Subject::where(['school_id' => $school_id, 'curriculum_level_group_id' => $level_group, 'name' => $name])->first();
 
 
 
@@ -178,7 +178,7 @@ class SubjectsController extends Controller
             $subject->name = $request->name;
             $subject->code = $request->code;
             $subject->curriculum_level_group_id = $level_group;
-            $subject->school_id = $this->getSchool()->id;
+            $subject->school_id = $school_id;
             $subject->is_mock = $request->is_mock;
             $subject->color_code = randomColorCode(); //this is from helpers in form of '#FFFFFF'
             $subject->save();
