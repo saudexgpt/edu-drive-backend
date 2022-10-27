@@ -402,8 +402,7 @@ class SchoolsController extends Controller
                 $name = "school_logo" . "." . $request->file('sch_logo')->guessClientExtension();
                 $folder_key = $school->folder_key;
                 $folder = "schools/" . $folder_key;
-                $logo = $request->file('sch_logo')->storeAs($folder, $name/*, 'public'
-                */);
+                $logo = $request->file('sch_logo')->storeAs($folder, $name, 'public');
 
                 $school->logo = $logo;
                 $school->mime = $mime;
