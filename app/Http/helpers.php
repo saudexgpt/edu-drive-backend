@@ -1051,7 +1051,7 @@ function mainDomainPublicPath($folder = null)
 }
 function subdomainPublicPath($folder = null)
 {
-    return "/home/edu-drive/api.edu-drive.com/storage/" . $folder;
+    return "/home/edudrive/api.edu-drive.com/storage/" . $folder;
 }
 
 function portalPulicPath($folder = null)
