@@ -396,10 +396,10 @@ class SchoolsController extends Controller
 
             if ($mime == 'image/png' || $mime == 'image/jpeg' || $mime == 'image/jpg' || $mime == 'image/gif') {
                 // delete older ones
-                // if (Storage::disk('public')->exists($school->logo)) {
-                //     Storage::disk('public')->delete($school->logo);
-                // }
-                $name = "school_logo" . "." . $request->file('sch_logo')->guessClientExtension();
+                if (Storage::disk('public')->exists($school->logo)) {
+                    Storage::disk('public')->delete($school->logo);
+                }
+                $name = "school_logo_" . time() . "." . $request->file('sch_logo')->guessClientExtension();
                 $folder_key = $school->folder_key;
                 $folder = "schools/" . $folder_key;
                 $logo = $request->file('sch_logo')->storeAs($folder, $name, 'public');
