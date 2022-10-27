@@ -1051,13 +1051,13 @@ function mainDomainPublicPath($folder = null)
 }
 function subdomainPublicPath($folder = null)
 {
-    return "/home/edu-drive/public_html/storage/" . $folder;
+    return "/home/edu-drive/api.edu-drive.com/storage/" . $folder;
 }
 
 function portalPulicPath($folder = null)
 {
-    return storage_path('app/public/' . $folder);
-    // return "/home/schoolpoint/public_html/api/storage/" . $folder;
+    // return storage_path('app/public/' . $folder);
+    return "/home/edudrive/api.edu-drive.com/storage/" . $folder;
 }
 
 function folderSize($dir)
