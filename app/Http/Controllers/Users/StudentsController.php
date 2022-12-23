@@ -267,8 +267,14 @@ class StudentsController extends Controller
         // }
 
         $request->folder_key = $school->folder_key;
+        // if ($school->generate_student_admission_no_automatically == 'no') {
+        //     $student = Student::where('registration_no', $request->registration_no)->first();
 
+        //     if ($student) {
 
+        //         return response()->json(['message' => 'Duplicate Registration No'], 500);
+        //     }
+        // }
         $username = $this->generateUsername($school->id, 'parent');
         $request->username = $username;
         $user_obj = new User();
@@ -279,13 +285,18 @@ class StudentsController extends Controller
         }
 
         // check for duplicate students
+        if ($school->generate_student_admission_no_automatically === 'no') {
+            $username = $request->registration_no;
+        } else {
+            $username = $this->generateUsername($school->id, 'student');
+            $this->updateUniqNumDb($school->id, 'student');
+        }
 
-        $username = $this->generateUsername($school->id, 'student');
         $request->username = $username;
+
         //save user information as student
         $user_obj = new User();
         $request->student_user_id = $user_obj->saveUserAsStudent($request);
-        $this->updateUniqNumDb($school->id, 'student');
 
         //save students table informaiton
         $request->registration_no = $username;
@@ -393,23 +404,24 @@ class StudentsController extends Controller
 
     public function uploadBulkStudents(Request $request)
     {
+        set_time_limit(0);
         // return $request;
         // $school_id = $this->getSchool()->id;
         $request->admission_sess_id = $this->getSession()->id;
         $bulk_data = json_decode(json_encode($request->bulk_data));
         // $level_id = $request->level_id;
         // $class_teacher_id = $request->class_teacher_id;
-
+        $unsaved_data = [];
+        $error = [];
         foreach ($bulk_data as $csvRow) {
             try {
-
                 $request->last_name = trim($csvRow->SURNAME);
                 $request->first_name = trim($csvRow->OTHER_NAMES);
                 $request->gender = trim(strtolower($csvRow->GENDER));
                 $request->dob = str_replace('/', '-', trim($csvRow->DOB));
 
                 $request->admission_year    =   trim($csvRow->ADMISSION_YEAR);
-
+                $request->registration_no = trim($csvRow->ADMISSION_NO);
                 $request->fname             =   trim($csvRow->PARENT_FIRST_NAME);
                 $request->lname             =   trim($csvRow->PARENT_LAST_NAME);
                 $request->parent_phone      =   trim($csvRow->PARENT_PHONE_1);
@@ -419,12 +431,16 @@ class StudentsController extends Controller
                 $request->address           =   trim($csvRow->RESIDENTIAL_ADDRESS);
                 $request->religion          =   trim($csvRow->RELIGION);
 
+
                 //store the entry for this student
                 $this->store($request);
             } catch (\Throwable $th) {
+                $unsaved_data[] = $csvRow;
+                $error[] = $th;
                 // return response()->json($th);
             }
         }
+        return response()->json(compact('unsaved_data', 'error'), 200);
     }
 
 
@@ -749,9 +765,9 @@ class StudentsController extends Controller
     {
         $reg_no = $request->reg_no;
 
-        $student = Student::where('registration_no', $reg_no)->get();
+        $student = Student::where('registration_no', $reg_no)->first();
 
-        if ($student->count() > 0) {
+        if ($student) {
 
             return 'true';
         }
