@@ -68,7 +68,7 @@ class LibrariesController extends Controller
         $user = $this->getUser();
         $school_id = $this->getSchool()->id;
         $isbn = $request->ISBN;
-        $book = LibraryBook::where('ISBN', $isbn)->first();
+        $book = LibraryBook::where(['ISBN' => $isbn, 'title' => $request->title])->first();
         if (!$book) {
             $book = new LibraryBook();
         }
