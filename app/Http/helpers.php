@@ -689,7 +689,7 @@ function todayDate()
     return date('Y-m-d', strtotime('now'));
 }
 
-function getDateFormat($dateTime)
+function getDateFormat($dateTime = 'now')
 {
     return date('Y-m-d', strtotime($dateTime));
 }

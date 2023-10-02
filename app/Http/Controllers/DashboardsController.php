@@ -210,7 +210,7 @@ class DashboardsController extends Controller
         $totalStaff = Staff::count();
         return $this->render(compact('totalPotentialSchools', 'totalSchools', 'totalGuardian', 'total_students', 'active_students', 'suspended_students', 'withdrawn_students', 'alumni', 'totalStaff'));
     }
-    public function adminDashboard()
+    /*public function adminDashboard()
     {
         $user = $this->getUser();
         $today = Carbon::now();
@@ -234,11 +234,11 @@ class DashboardsController extends Controller
         $population = $total_students + $totalStaff;
         // $activities = AuditTrail::where('school_id', $school_id)->where('created_at', '>', $today->startOfWeek())->orderBy('id', 'DESC')->get();
         $income = IncomeAndExpense::selectRaw('SUM(amount) as total_income')
-            ->where('deletable', '0')
+        ->where('deletable', '0')
             ->where(['school_id' => $school_id, 'sess_id' => $sess_id, 'status' => 'income'])
             ->first();
         $expenses = IncomeAndExpense::selectRaw('SUM(amount) as total_expenses')
-            ->where('deletable', '0')
+        ->where('deletable', '0')
             ->where(['school_id' => $school_id, 'sess_id' => $sess_id, 'status' => 'expenses'])
             ->first();
         $total_income = ($income->total_income > 0) ?  $this->getCurrency() . number_format($income->total_income, 0) : $this->getCurrency() . '0';
@@ -253,6 +253,33 @@ class DashboardsController extends Controller
         // return $this->render(compact('total_students', 'active_students', 'active_male', 'active_female', 'suspended_students', 'withdrawn_students', 'alumni', 'totalStaff', 'totalGuardian', 'activities', 'user'));
 
         return $this->render(compact('population', 'total_income', 'total_expenses', 'total_debts', 'user'));
+    }*/
+    public function adminDashboard()
+    {
+        $user = $this->getUser();
+        $today = Carbon::now();
+        $school_id = $this->getSchool()->id;
+        $sess_id = $this->getSession()->id;
+        $term_id = $this->getTerm()->id;
+        $total_students = Student::ActiveAndSuspended()->where(['school_id' => $school_id])->count();
+        $active_students = Student::ActiveStudentOnly()->where(['school_id' => $school_id])->count();
+        $suspended_students = Student::SuspendedStudentOnly()->where(['school_id' => $school_id])->count();
+        $withdrawn_students = Student::WithdrawnStudentOnly()->where(['school_id' => $school_id])->count();
+        $alumni = Alumni::where(['school_id' => $school_id])->count();
+
+        $active_male = Student::ActiveStudentOnly()->join('users', 'users.id', 'students.user_id')
+            ->where(['students.school_id' => $school_id, 'users.gender' => 'male'])->count();
+
+        $active_female = Student::ActiveStudentOnly()->join('users', 'users.id', 'students.user_id')
+            ->where(['students.school_id' => $school_id, 'users.gender' => 'female'])->count();
+
+        $totalStaff = Staff::where(['school_id' => $school_id])->count();
+        $totalGuardian = Guardian::where('school_id', $school_id)->count();
+        $population = $total_students + $totalStaff;
+        $activities = AuditTrail::where('school_id', $school_id)->where('created_at', '>', $today->startOfWeek())->orderBy('id', 'DESC')->get();
+        return $this->render(compact('total_students', 'active_students', 'active_male', 'active_female', 'suspended_students', 'withdrawn_students', 'alumni', 'totalStaff', 'totalGuardian', 'activities', 'user'));
+
+        // return $this->render(compact('population', 'total_income', 'total_expenses', 'total_debts', 'user'));
     }
 
     public function studentDashboard()
@@ -311,167 +338,6 @@ class DashboardsController extends Controller
         $subject_teachers = $teacher->teacherSubjects($staff->id, $school->id);
 
         return $this->render(compact('staff', 'class_activities', 'class_teachers', 'subject_teachers'));
-    }
-
-    public function roleDashboard($role)
-    {
-        $user = $this->getUser();
-        $today = Carbon::now();
-        $school_id = $this->getSchool()->id;
-        $sess_id = $this->getSession()->id;
-        $term_id = $this->getTerm()->id;
-
-        $student_obj = new Student();
-        $student_in_class_obj = new StudentsInClass();
-        $class_attendance = new ClassAttendance();
-        $routine_obj = new Routine();
-
-
-        if (!$user->hasRole($role)) {
-            return redirect()->route('denied');
-        }
-        $activities = $user->activityLog()->where('created_at', '>', $today->startOfWeek())->orderBy('id', 'DESC')->get();
-
-        $notifications = News::where('school_id', $school_id)
-            ->where('targeted_audience', 'like', $user->role)
-            ->orWhere('targeted_audience', 'like', $user->role . '~%')
-            ->orWhere('targeted_audience', 'like', '%~' . $user->role . '~%')
-            ->orWhere('targeted_audience', 'like', '%~' . $user->role)
-            ->orderBy('id', 'DESC')->get();
-
-        if ($notifications != '[]') {
-            foreach ($notifications as $notification) {
-
-                $seen_by_array  = explode('~', $notification->seen_by);
-
-                $notification->seen_by_array = $seen_by_array;
-            }
-        }
-
-        $staff = $this->getStaff();
-
-
-
-
-        switch ($role) {
-
-            case 'proprietor':
-                $group_of_school = GroupOfSchool::where('proprietor_user_id', $user->id)->first();
-                if ($group_of_school) {
-
-                    $schools = $group_of_school->schools;
-                    $total_students = 0;
-                    $active_students = 0;
-                    $active_male = 0;
-                    $active_female = 0;
-                    $suspended_students = 0;
-                    $withdrawn_students = 0;
-                    $alumni = 0;
-                    $totalStaff = 0;
-                    $totalGuardian = 0;
-                    foreach ($schools as $school) {
-                        $school_id = $school->id;
-                        $total_students += Student::ActiveAndSuspended()->where(['school_id' => $school_id])->count();
-                        $active_students += Student::ActiveStudentOnly()->where(['school_id' => $school_id])->count();
-                        $suspended_students += Student::SuspendedStudentOnly()->where(['school_id' => $school_id])->count();
-                        $withdrawn_students += Student::WithdrawnStudentOnly()->where(['school_id' => $school_id])->count();
-                        $alumni += Alumni::where(['school_id' => $school_id])->count();
-
-                        $active_male += Student::ActiveStudentOnly()->join('users', 'users.id', 'students.user_id')
-                            ->where(['students.school_id' => $school_id, 'users.gender' => 'male'])->count();
-
-                        $active_female += Student::ActiveStudentOnly()->join('users', 'users.id', 'students.user_id')
-                            ->where(['students.school_id' => $school_id, 'users.gender' => 'female'])->count();
-
-                        $totalStaff += Staff::where(['school_id' => $school_id])->count();
-                        $totalGuardian += Guardian::where('school_id', $school_id)->count();
-                    }
-                    // $total_students = 0;
-                    // $active_students = 0;
-                    // $suspended_students = 0;
-                    // $withdrawn_students = 0;
-                    // $alumni = 0;
-                    return $this->render('core::dashboard.proprietor', compact('schools', 'total_students', 'active_students', 'active_male', 'active_female', 'suspended_students', 'withdrawn_students', 'alumni', 'totalStaff', 'totalGuardian', 'staff', 'activities', 'user', 'notifications'));
-                } else {
-                    $total_students = Student::ActiveAndSuspended()->where(['school_id' => $school_id])->count();
-                    $active_students = Student::ActiveStudentOnly()->where(['school_id' => $school_id])->count();
-                    $suspended_students = Student::SuspendedStudentOnly()->where(['school_id' => $school_id])->count();
-                    $withdrawn_students = Student::WithdrawnStudentOnly()->where(['school_id' => $school_id])->count();
-                    $alumni = Alumni::where(['school_id' => $school_id])->count();
-
-                    $active_male = Student::ActiveStudentOnly()->join('users', 'users.id', 'students.user_id')
-                        ->where(['students.school_id' => $school_id, 'users.gender' => 'male'])->count();
-
-                    $active_female = Student::ActiveStudentOnly()->join('users', 'users.id', 'students.user_id')
-                        ->where(['students.school_id' => $school_id, 'users.gender' => 'female'])->count();
-
-                    $totalStaff = Staff::where(['school_id' => $school_id])->count();
-                    $totalGuardian = Guardian::where('school_id', $school_id)->count();
-
-                    return $this->render('core::dashboard.proprietor', compact('total_students', 'active_students', 'active_male', 'active_female', 'suspended_students', 'withdrawn_students', 'alumni', 'totalStaff', 'totalGuardian', 'staff', 'activities', 'user', 'notifications'));
-                }
-                //fetch specific things you want admin to see on their front page
-
-                break;
-            case 'admin':
-                //fetch specific things you want admin to see on their front page
-                $total_students = Student::ActiveAndSuspended()->where(['school_id' => $school_id])->count();
-                $active_students = Student::ActiveStudentOnly()->where(['school_id' => $school_id])->count();
-                $suspended_students = Student::SuspendedStudentOnly()->where(['school_id' => $school_id])->count();
-                $withdrawn_students = Student::WithdrawnStudentOnly()->where(['school_id' => $school_id])->count();
-                $alumni = Alumni::where(['school_id' => $school_id])->count();
-
-                $active_male = Student::ActiveStudentOnly()->join('users', 'users.id', 'students.user_id')
-                    ->where(['students.school_id' => $school_id, 'users.gender' => 'male'])->count();
-
-                $active_female = Student::ActiveStudentOnly()->join('users', 'users.id', 'students.user_id')
-                    ->where(['students.school_id' => $school_id, 'users.gender' => 'female'])->count();
-
-                $totalStaff = Staff::where(['school_id' => $school_id])->count();
-                $totalGuardian = Guardian::where('school_id', $school_id)->count();
-
-                $activities = AuditTrail::where('school_id', $school_id)->where('created_at', '>', $today->startOfWeek())->orderBy('id', 'DESC')->get();
-
-                return $this->render('core::dashboard.admin', compact('total_students', 'active_students', 'active_male', 'active_female', 'suspended_students', 'withdrawn_students', 'alumni', 'totalStaff', 'totalGuardian', 'staff', 'activities', 'user', 'notifications'));
-                // return $this->render('core::dashboard.admin', compact('maleStudents', 'femaleStudents', 'totalStudents', 'totalStaff', 'totalGuardian', 'staff', 'activities', 'user', 'notifications'));
-                break;
-
-            case 'teacher':
-                //fetch specific things you want teachers to see on their front page
-
-                $class_activities = [];
-                $class_teachers =  ClassTeacher::where(['school_id' => $school_id, 'teacher_id' => $staff->id])->get();
-                foreach ($class_teachers as $class_teacher) {
-                    $class_activities = $class_teacher->classActivity()->orderBy('id', "DESC")->get();
-                }
-
-
-                // alex
-                $subjects = $this->getStudents($staff->id);
-                $routines =  $routine_obj->timeTable($staff->id);
-                $details = $this->getClasses();
-
-                return $this->render('core::dashboard.teacher2', compact('routines', 'staff', 'class_activities', 'class_teachers', 'user', 'notifications', 'subjects', 'routines', 'details'));
-                //                return $this->render('core::dashboard.teacher', compact('routines', 'staff', 'class_activities', 'user', 'notifications'));
-                break;
-
-            case 'account':
-                //fetch specific things you want accountants to see on their front page
-                return $this->render('core::dashboard.account', compact('staff', 'activities', 'user', 'notifications'));
-                break;
-
-            default:
-                # code...
-                break;
-        }
-
-
-        // if ($user->role == "staff") {
-
-
-        //     $data = compact('totalStudents', 'totalStaff', 'totalGuardian', 'routines', 'staff', 'activities', 'user', 'notifications');
-        //     //return $this->render('core::dashboard.staff', compact('totalStudents','totalStaff','totalGuardian', 'routines', 'staff', 'activities', 'user', 'notifications'));
-        // }
     }
 
     private function getClasses()

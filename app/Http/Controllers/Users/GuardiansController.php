@@ -59,9 +59,10 @@ class GuardiansController extends Controller
 
         if ($entry_status == 'new_entry') {
             $this->updateUniqNumDb($school->id, 'parent');
-        } else {
-            return response()->json(['message' => "User with email ($request->email) already exists"], 500);
         }
+        /*else {
+            return response()->json(['message' => "User with email ($request->email) already exists"], 500);
+        }*/
 
         $guardian = Guardian::where('user_id', $user_id)->first();
 

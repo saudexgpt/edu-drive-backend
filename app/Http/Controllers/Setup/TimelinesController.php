@@ -16,22 +16,31 @@ class TimelinesController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
         //
+        $limit = $request->limit;
         $user = $this->getUser();
         $school = $this->getSchool();
 
         $user_id = $user->id;
-        //Personal time line
-        $personal_timelines = Timeline::with('user', 'comments.user')->where(['school_id' => $school->id])->where('user_id', $user_id)->orWhere(function ($query) use ($user_id) {
 
-            return
-                $query->where('visible_to', 'like', $user_id)
-                ->orWhere('visible_to', 'like', $user_id . '~%')
-                ->orWhere('visible_to', 'like', '%~' . $user_id . '~%')
-                ->orWhere('visible_to', 'like', '%~' . $user_id);
-        })->orderBy('id', 'DESC')->paginate(10);
+        if ($user->role == 'staff') {
+
+            //Personal time line
+            $personal_timelines = Timeline::with('user', 'comments.user')->where(['school_id' => $school->id])->orderBy('id', 'DESC')->paginate($limit);
+        } else {
+
+            //Personal time line
+            $personal_timelines = Timeline::with('user', 'comments.user')->where(['school_id' => $school->id])->where('user_id', $user_id)->orWhere(function ($query) use ($user_id) {
+
+                return
+                    $query->where('visible_to', 'like', $user_id)
+                    ->orWhere('visible_to', 'like', $user_id . '~%')
+                    ->orWhere('visible_to', 'like', '%~' . $user_id . '~%')
+                    ->orWhere('visible_to', 'like', '%~' . $user_id);
+            })->orderBy('id', 'DESC')->paginate($limit);
+        }
 
         //posts and time line that is permitted to be viewed
 

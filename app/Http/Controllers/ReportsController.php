@@ -304,6 +304,8 @@ class ReportsController extends Controller
 
         $categories = [];
         $male = [];
+        $total_male = 0;
+        $total_female = 0;
         $female = [];
         $total = [];
         $dataLabels = [
@@ -329,6 +331,10 @@ class ReportsController extends Controller
             $female_count = Student::join('users', 'users.id', 'students.user_id')
                 ->where(['school_id' => $school_id, 'gender' => 'female', 'admission_sess_id' => $admission_sess_id, 'level_admitted' => $level->id])->count();
             $total_count = Student::where(['school_id' => $school_id, 'admission_sess_id' => $admission_sess_id, 'level_admitted' => $level->id])->count();
+
+            $total_male += $male_count;
+            $total_female += $female_count;
+
             $male[] = [
                 'name' => $level->level,
                 'y' => (int) $male_count,
@@ -409,13 +415,15 @@ class ReportsController extends Controller
             'categories'    => $categories,
             'series'      => $series,
             // 'title' => $school->name . ', ' . $school->lga->name,
-            'title' => 'Admissions Chart for ' . $selected_session->name . ' Academic Session',
+            'title' => 'Population Chart for ' . $selected_session->name . ' Academic Session',
             'subtitle' => 'Click the columns to view report for each class',
             'selected_session' => $selected_session,
             'all_sessions' => $all_sessions,
             'admission_sess_id' => $admission_sess_id,
             'chart_only' => $chart_only,
-            'drilldown_series' => $drilldown_series
+            'drilldown_series' => $drilldown_series,
+            'total_male' => $total_male,
+            'total_female' => $total_female
         ], 200);
         //return $this->render('reports.admission', compact('levels', 'selected_session', 'all_sessions', 'admission_sess_id', 'chart_only'));
     }
@@ -713,8 +721,8 @@ class ReportsController extends Controller
         $school_id = $this->getSchool()->id;
         $staff_id = $this->getStaff()->id;
 
-        $sess_id = 4; //$this->getSession()->id;
-        $term_id = 2; //$this->getTerm()->id;
+        $sess_id = $this->getSession()->id;
+        $term_id = $this->getTerm()->id;
         if (isset($request['sess_id']) && $request['sess_id'] !== null) {
             //$school = get_object_vars(json_decode($request['school']));
             $sess_id = $request['sess_id'];
@@ -756,7 +764,11 @@ class ReportsController extends Controller
 
     public function attendanceReport(Request $request)
     {
-        $date = getDateFormat($request->date);
+
+        $date = getDateFormat();
+        if (isset($request->date) && $request->date != '') {
+            $date = getDateFormat($request->date);
+        }
         if (isset($request->school_id)) {
             $school_id = $request->school_id;
         } else {
@@ -765,7 +777,7 @@ class ReportsController extends Controller
 
         $school = School::find($school_id);
         $school_name = $school->name . ', ' . $school->lga->name;
-        $title = $school_name . '<br> Attendance Chart for ' . getDateFormatWords($date);
+        $title = 'Attendance Chart for ' . getDateFormatWords($date);
         $subtitle = 'Click on a column to see attendance for each class';
         $levels = $this->getLevels();
         $presentData = [];
@@ -805,61 +817,61 @@ class ReportsController extends Controller
                 'drilldown' => $level->level . '_absent',
 
             ];
-            //if ($total_present > 0) {
+        //if ($total_present > 0) {
 
-            $drilldown_series_present_data = [];
-            $drilldown_series_absent_data = [];
+        // $drilldown_series_present_data = [];
+        // $drilldown_series_absent_data = [];
 
-            foreach ($level->classTeachers as $class_teacher) {
-                $class_present = ClassAttendance::where('class_teacher_id', $class_teacher->id)
-                    ->whereDate('date', '=', $date)->sum('total_present');
-                $class_absent = ClassAttendance::where('class_teacher_id', $class_teacher->id)
-                    ->whereDate('date', '=', $date)->sum('total_absent');
-                $drilldown_series_present_data[] = [$class_teacher->c_class->name, (int) $class_present];
-                $drilldown_series_absent_data[] = [$class_teacher->c_class->name, (int) $class_absent];
-            }
+        // foreach ($level->classTeachers as $class_teacher) {
+        //     $class_present = ClassAttendance::where('class_teacher_id', $class_teacher->id)
+        //         ->whereDate('date', '=', $date)->sum('total_present');
+        //     $class_absent = ClassAttendance::where('class_teacher_id', $class_teacher->id)
+        //         ->whereDate('date', '=', $date)->sum('total_absent');
+        //     $drilldown_series_present_data[] = [$class_teacher->c_class->name, (int) $class_present];
+        //     $drilldown_series_absent_data[] = [$class_teacher->c_class->name, (int) $class_absent];
+        // }
 
-            $drilldown_present_series[] =    [
+        // $drilldown_present_series[] =    [
 
-                "name" => 'Present',
-                "id" => $level->level . '_present',
-                "data" => $drilldown_series_present_data,
-                'dataLabels' => $dataLabels
+        //     "name" => 'Present',
+        //     "id" => $level->level . '_present',
+        //     "data" => $drilldown_series_present_data,
+        //     'dataLabels' => $dataLabels
 
 
-            ];
-            $drilldown_absent_series[] =    [
+        // ];
+        // $drilldown_absent_series[] =    [
 
-                "name" => 'Absent',
-                "id" => $level->level . '_absent',
-                "data" =>  $drilldown_series_absent_data,
-                'dataLabels' => $dataLabels
+        //     "name" => 'Absent',
+        //     "id" => $level->level . '_absent',
+        //     "data" =>  $drilldown_series_absent_data,
+        //     'dataLabels' => $dataLabels
 
-            ];
+        // ];
         //}
 
         // $presentData[] = $total_present;
         // $absentData[] = $total_absent;
         // $chartLabel[] = $level->level;
         endforeach;
-        $drilldown_series = array_merge($drilldown_present_series, $drilldown_absent_series);
+        // $drilldown_series = array_merge($drilldown_present_series, $drilldown_absent_series);
         $series = [
             [
                 'name' => 'Present',
                 //'colorByPoint' => true, //array format
                 'data' => $presentData,
-                'color' => '#0073b7',
+                // 'color' => '#063',
                 'dataLabels' => $dataLabels
             ],
             [
                 'name' => 'Absent',
                 'data' => $absentData, //array format
-                'color' => '#f012be',
+                // 'color' => '#910000',
                 'dataLabels' => $dataLabels
             ],
 
         ];
-        return response()->json(compact(/*'chartLabel', 'presentData', 'absentData',*/'school_name', 'drilldown_series', 'series', 'title', 'subtitle'), 200);
+        return response()->json(compact(/*'chartLabel', 'presentData', 'absentData',*/'school_name', 'series', 'title', 'subtitle'), 200);
     }
 
     // public function attendanceReport()

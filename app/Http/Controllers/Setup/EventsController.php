@@ -20,7 +20,7 @@ class EventsController extends Controller
     {
         $school_id = $this->getSchool()->id;
         $start_of_month = date('Y-m-d', strtotime(Carbon::now()->startOfMonth()));
-        $events = Event::where('school_id', $school_id)/*->where('end', '>=', $start_of_month)*/->get();
+        $events = Event::where('school_id', $school_id)/*->where('end', '>=', $start_of_month)*/->orderBy('start', 'DESC')->get();
         return $this->render(compact('events'));
     }
     public function events()

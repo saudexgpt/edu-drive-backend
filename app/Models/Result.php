@@ -669,7 +669,13 @@ class Result extends Model
     public function analyzeTeacherTermlySubjectPerformance($teacher_id, $school_id, $sess_id, $term_id)
     {
 
-        $results = Result::groupBy('subject_teacher_id')->with('subjectTeacher.subject', 'classTeacher.c_class')->where(['recorded_by' => $teacher_id, 'sess_id' => $sess_id, 'school_id' => $school_id, 'term_id' => $term_id, 'result_status' => 'Applicable'])->where('exam', '!=', null)->orderBy('sess_id')->select('*', \DB::raw('AVG(total) as average'))->get();
+        $results = Result::groupBy('subject_teacher_id')
+            ->with('subjectTeacher.subject', 'classTeacher.c_class')
+            ->where(['recorded_by' => $teacher_id, 'sess_id' => $sess_id, 'school_id' => $school_id, 'term_id' => $term_id, 'result_status' => 'Applicable'])
+            ->where('exam', '!=', null)
+            ->orderBy('class_teacher_id')
+            ->select('*', \DB::raw('AVG(total) as average'))
+            ->get();
 
         return $results;
     }
