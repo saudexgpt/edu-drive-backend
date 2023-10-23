@@ -475,7 +475,7 @@ class StudentsController extends Controller
         $unsaved_data = [];
         $error = [];
         foreach ($bulk_data as $csvRow) {
-            try {
+            //try {
                 $request->last_name = trim($csvRow->SURNAME);
                 $request->first_name = trim($csvRow->OTHER_NAMES);
                 $request->gender = trim(strtolower($csvRow->GENDER));
@@ -495,11 +495,11 @@ class StudentsController extends Controller
 
                 //store the entry for this student
                 $this->storeBulkStudent($request);
-            } catch (\Throwable $th) {
-                $unsaved_data[] = $csvRow;
-                $error[] = $th;
-                // return response()->json($th);
-            }
+            // } catch (\Throwable $th) {
+            //     $unsaved_data[] = $csvRow;
+            //     $error[] = $th;
+            //     // return response()->json($th);
+            // }
         }
         return response()->json(compact('unsaved_data', 'error'), 200);
     }
