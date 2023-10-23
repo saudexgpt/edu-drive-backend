@@ -314,7 +314,7 @@ class StudentsController extends Controller
         //Notification::send($all_staff, new NewRegistration($new_user));
         return 'Successful';
     }
-    public function storeOld(Request $request)
+    public function storeBulkStudent(Request $request)
     {
         //save and retrieve class information
         // return $request;
@@ -494,7 +494,7 @@ class StudentsController extends Controller
 
 
             //store the entry for this student
-            $this->store($request);
+            $this->storeBulkStudent($request);
             // } catch (\Throwable $th) {
             //     $unsaved_data[] = $csvRow;
             //     $error[] = $th;
