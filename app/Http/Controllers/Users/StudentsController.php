@@ -485,7 +485,7 @@ class StudentsController extends Controller
             $request->registration_no = trim($csvRow->ADMISSION_NO);
             $request->fname             =   trim($csvRow->PARENT_FIRST_NAME);
             $request->lname             =   trim($csvRow->PARENT_LAST_NAME);
-            $request->parent_phone      =   trim($csvRow->PARENT_PHONE_1);
+            $request->parent_phone      =   (isset($csvRow->PARENT_PHONE_1)) ? trim($csvRow->PARENT_PHONE_1) : NULL;
             $request->parent_phone2     =   (isset($csvRow->PARENT_PHONE_2)) ? trim($csvRow->PARENT_PHONE_2) : NULL;
             $request->email             =  (isset($csvRow->PARENT_EMAIL)) ? trim($csvRow->PARENT_EMAIL) : NULL;
             $request->occupation        =   (isset($csvRow->PARENT_OCCUPATION)) ? trim($csvRow->PARENT_OCCUPATION) : NULL;
