@@ -38,7 +38,31 @@ class ClassesController extends Controller
 
         return array($class_teachers, $sections, $levels, $staff);
     }
+    public function fetchClassesWithTheirSubjects(Request $request)
+    {
+        $school_id = $this->getSchool()->id;
+        $user = $this->getUser();
+        // return $user->roles;
+        $roles = array_map(
+            function ($role) {
+                return $role['name'];
+            },
+            $user->roles->toArray()
+        );
+        $class_teachers = [];
+        if (in_array('teacher', $roles)) {
 
+            $id = $this->getStaff()->id;
+            $class_teachers = ClassTeacher::with(['c_class', 'subjectTeachers' => function ($q) use ($id) {
+                $q->where('teacher_id', $id);
+            }, 'subjectTeachers.subject'])->where(['teacher_id' => $id, 'school_id' => $school_id])->get();
+        }
+        if (in_array('admin', $roles)) {
+
+            $class_teachers = ClassTeacher::with(['c_class', 'subjectTeachers.subject'])->where(['school_id' => $school_id])->get();
+        }
+        return response()->json(compact('class_teachers'), 200);
+    }
     /**
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\View\View
      */

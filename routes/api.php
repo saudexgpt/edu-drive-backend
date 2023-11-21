@@ -318,6 +318,7 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
         Route::get('student-quizzes', [QuizController::class, 'studentQuizzes']);
 
         Route::post('store-question', [QuizController::class, 'storeQuestion']);
+        Route::post('store-bulk-questions', [QuizController::class, 'storeBulkQuestions']);
         Route::put('update-question/{id}', [QuizController::class, 'updateQuestion']);
         Route::post('set-quiz', [QuizController::class, 'setQuiz']);
         Route::put('update-quiz/{id}', [QuizController::class, 'updateQuiz']);
@@ -489,6 +490,8 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
         Route::delete('level/destroy/{level}', [LevelsController::class, 'destroy']);
 
         Route::resource('classes', ClassesController::class);
+
+        Route::get('fetch-classes-with-their-subjects', [ClassesController::class, 'fetchClassesWithTheirSubjects']);
         Route::post('class/assign-teacher', [ClassesController::class, 'assignClassTeacher']);
         Route::get('class-teacher-class', [ClassesController::class, 'classTeacherClasses']);
         Route::delete('class/destroy/{class_teacher}', [ClassesController::class, 'destroy']);

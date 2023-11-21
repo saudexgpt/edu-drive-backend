@@ -286,7 +286,48 @@ class QuizController extends Controller
 
         return response()->json(compact('question'), 200);
     }
+    public function storeBulkQuestions(Request $request)
+    {
+        set_time_limit(0);
+        $bulk_data = json_decode(json_encode($request->bulk_data));
+        // $level_id = $request->level_id;
+        // $class_teacher_id = $request->class_teacher_id;
+        $unsaved_data = [];
+        $error = [];
 
+        $school_id = $this->getSchool()->id;
+        $subject_teacher_id = $request->subject_teacher_id;
+        $teacher_id = $request->teacher_id;
+        foreach ($bulk_data as $csvRow) {
+            //try {
+            $quiz_question = trim($csvRow->QUESTION);
+            $optA = (isset($csvRow->OPTA)) ? trim($csvRow->OPTA) : NULL;
+            $optB = (isset($csvRow->OPTB)) ? trim($csvRow->OPTB) : NULL;
+            $optC = (isset($csvRow->OPTC)) ? trim($csvRow->OPTC) : NULL;
+            $optD = (isset($csvRow->OPTD)) ? trim($csvRow->OPTD) : NULL;
+
+
+            $answer    =   (isset($csvRow->ANSWER)) ? trim($csvRow->ANSWER) : NULL;
+            $question_type = 'multi_choice';
+            $point =   1;
+
+
+            $question = new Question();
+            $question->school_id = $school_id;
+            $question->subject_teacher_id = $subject_teacher_id;
+            $question->teacher_id = $teacher_id;
+            $question->question = $quiz_question;
+            $question->optA = $optA;
+            $question->optB = $optB;
+            $question->optC = $optC;
+            $question->optD = $optD;
+            $question->answer = $answer;
+            $question->question_type = $question_type;
+            $question->point = $point;
+            $question->save();
+        }
+        return response()->json(compact('unsaved_data', 'error'), 200);
+    }
     /**
      * Store a newly created resource in storage.
      * @param  Request $request
