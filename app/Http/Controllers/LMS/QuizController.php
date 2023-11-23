@@ -290,8 +290,6 @@ class QuizController extends Controller
     {
         set_time_limit(0);
         $bulk_data = json_decode(json_encode($request->bulk_data));
-        // $level_id = $request->level_id;
-        // $class_teacher_id = $request->class_teacher_id;
         $unsaved_data = [];
         $error = [];
 
