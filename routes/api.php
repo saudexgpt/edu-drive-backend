@@ -318,7 +318,7 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
         Route::get('student-quizzes', [QuizController::class, 'studentQuizzes']);
 
         Route::post('store-question', [QuizController::class, 'storeQuestion']);
-        Route::post('/store-bulk-questions', [QuizController::class, 'storeBulkQuestions']);
+        Route::get('/store-bulk-questions', [QuizController::class, 'storeBulkQuestions']);
         Route::put('update-question/{id}', [QuizController::class, 'updateQuestion']);
         Route::post('set-quiz', [QuizController::class, 'setQuiz']);
         Route::put('update-quiz/{id}', [QuizController::class, 'updateQuiz']);
