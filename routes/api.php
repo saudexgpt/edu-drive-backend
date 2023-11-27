@@ -333,7 +333,7 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
         Route::post('attempt-quiz', [QuizController::class, 'attemptQuiz']);
         Route::post('update-remaining-time', [QuizController::class, 'updateRemainingTime']);
 
-        Route::get('submit-quiz-answers', [QuizController::class, 'submitQuizAnswers']);
+        // Route::get('submit-quiz-answers', [QuizController::class, 'submitQuizAnswers']);
         Route::post('submit-quiz-answers', [QuizController::class, 'submitQuizAnswers']);
 
         Route::post('score-theory-answers', [QuizController::class, 'scoreTheoryAnswers']);
