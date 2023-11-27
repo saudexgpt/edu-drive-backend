@@ -225,7 +225,7 @@ class QuizController extends Controller
             $quiz_attempt_id = $answer['quiz_attempt_id'];
             $quiz_answer_id = $answer['id'];
             $student_answer = $answer['student_answer'];
-            $correct_answer = $answer['question']['answer'];
+            $correct_answer = $answer['correct_answer'];
             $point_earned = $this->markExam($student_answer, $correct_answer);
             $student_score += $point_earned;
             $total_score++;
