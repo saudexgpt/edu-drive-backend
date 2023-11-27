@@ -312,7 +312,9 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
     Route::group(['prefix' => 'lms'], function () {
 
 
+        Route::get('store-bulk-questions', [QuizController::class, 'storeBulkQuestions']);
         Route::post('store-bulk-questions', [QuizController::class, 'storeBulkQuestions']);
+
         Route::post('store-question', [QuizController::class, 'storeQuestion']);
 
         Route::get('quiz', [QuizController::class, 'quiz']);
@@ -330,7 +332,10 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
         Route::delete('delete-quiz/{id}', [QuizController::class, 'deleteQuiz']);
         Route::post('attempt-quiz', [QuizController::class, 'attemptQuiz']);
         Route::post('update-remaining-time', [QuizController::class, 'updateRemainingTime']);
+
+        Route::get('submit-quiz-answers', [QuizController::class, 'submitQuizAnswers']);
         Route::post('submit-quiz-answers', [QuizController::class, 'submitQuizAnswers']);
+
         Route::post('score-theory-answers', [QuizController::class, 'scoreTheoryAnswers']);
 
 
