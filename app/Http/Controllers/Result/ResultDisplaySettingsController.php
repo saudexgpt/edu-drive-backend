@@ -69,14 +69,12 @@ class ResultDisplaySettingsController extends Controller
 
 
         $result_setting->save();
-        if ($request->file('result_logo') != null && $request->file('result_logo')->isValid()) {
-
-            $this->updateLogo($request, $result_setting);
-        }
+        $this->updateLogoAndStamp($request, $result_setting);
+        $result_setting = ResultDisplaySetting::find($request->id);
         return response()->json(compact('result_setting'), 200);
     }
 
-    private function updateLogo(Request $request, $result_setting)
+    private function updateLogoAndStamp(Request $request, $result_setting)
     {
         $school = $this->getSchool();
         if ($request->file('result_logo') != null && $request->file('result_logo')->isValid()) {
@@ -96,8 +94,26 @@ class ResultDisplaySettingsController extends Controller
 
                 $result_setting->logo = $logo;
 
-                if ($result_setting->save()) {
-                    return $result_setting->logo;
+                $result_setting->save();
+            }
+        }
+        if ($request->file('head_teacher_stamp') != null && $request->file('head_teacher_stamp')->isValid()) {
+
+            $result_settings = ResultDisplaySetting::where('school_id', $school->id)->get();
+            $mime = $request->file('head_teacher_stamp')->getClientMimeType();
+
+            if ($mime == 'image/png' || $mime == 'image/jpeg' || $mime == 'image/jpg' || $mime == 'image/gif') {
+                // delete older ones
+                if (Storage::disk('public')->exists($result_setting->head_teacher_stamp)) {
+                    Storage::disk('public')->delete($result_setting->head_teacher_stamp);
+                }
+                $name = "stamp_" . time() . "." . $request->file('head_teacher_stamp')->guessClientExtension();
+                $folder_key = $school->folder_key;
+                $folder = "schools/" . $folder_key;
+                $stamp = $request->file('head_teacher_stamp')->storeAs($folder, $name, 'public');
+                foreach ($result_settings as $setting) {
+                    $setting->head_teacher_stamp = $stamp;
+                    $setting->save();
                 }
             }
         }
