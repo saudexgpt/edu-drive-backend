@@ -48,7 +48,8 @@ class ResultDisplaySettingsController extends Controller
         $result_setting->midterm_score_limit = $request->midterm_score_limit;
         $result_setting->add_attendance_to_ca = $request->add_attendance_to_ca;
         $result_setting->attendance_score_limit = $request->attendance_score_limit;
-
+        
+        $result_setting->display_midterm_assessment_on_result_sheet = $request->display_midterm_assessment_on_result_sheet;
         $result_setting->display_exam_score_only_for_full_term = $display_exam_score_only_for_full_term;
         $result_setting->display_student_position = $request->display_student_position;
         $result_setting->display_student_subject_position = $request->display_student_subject_position;
