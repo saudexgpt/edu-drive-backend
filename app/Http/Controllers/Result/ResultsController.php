@@ -906,8 +906,8 @@ class ResultsController extends Controller
                         $student_remark->sub_term = $sub_term;
                         $student_remark->student_id = $student->id;
                         $student_remark->teacher_id = $student_in_class->classTeacher->teacher_id;
-                        $student_remark->class_teacher_status == 'default';
-                        $student_remark->head_teacher_status == 'default';
+                        $student_remark->class_teacher_status = 'default';
+                        $student_remark->head_teacher_status = 'default';
                     }
 
                     $student_name = ucwords(strtolower($student->user->first_name . ' ' . $student->user->last_name));
@@ -1479,8 +1479,8 @@ class ResultsController extends Controller
                     $student_remark->sub_term = $sub_term;
                     $student_remark->student_id = $student_id;
                     $student_remark->teacher_id = $students_in_class->classTeacher->teacher_id;
-                    $student_remark->class_teacher_status == 'default';
-                    $student_remark->head_teacher_status == 'default';
+                    $student_remark->class_teacher_status = 'default';
+                    $student_remark->head_teacher_status = 'default';
                     //this does the auto remark for each student
                     $student_remark->class_teacher_remark = ResultComment::getComment($student_name, $result_details_array, $student_average, 'class_teacher');
                     $student_remark->head_teacher_remark = ResultComment::getComment($student_name, $result_details_array, $student_average, 'head_teacher');
