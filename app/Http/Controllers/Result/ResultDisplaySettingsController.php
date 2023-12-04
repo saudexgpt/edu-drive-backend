@@ -58,6 +58,8 @@ class ResultDisplaySettingsController extends Controller
         $result_setting->display_student_subject_average = $request->display_student_subject_average;
         $result_setting->display_student_class_average = $request->display_student_class_average;
         $result_setting->display_grade = $request->display_grade;
+        $result_setting->display_cummulative_score_on_result_sheet = $request->display_cummulative_score_on_result_sheet;
+
         $result_setting->display_student_behovior_and_skill_rating = $request->display_student_behovior_and_skill_rating;
         $result_setting->display_logo_for_result_background = $request->display_logo_for_result_background;
         $result_setting->display_school_name_on_result = $request->display_school_name_on_result;

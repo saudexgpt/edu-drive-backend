@@ -299,9 +299,14 @@ class ClassesController extends Controller
             'student' => function ($query) {
                 $query->ActiveAndSuspended();
             },
-            'student.studentGuardian.guardian.user', 'student.user', 'classTeacher.c_class', 'student.behavior' => function ($q) use ($school_id, $sess_id, $term_id) {
+            'student.studentGuardian.guardian.user', 'student.user', 'classTeacher.c_class',
+            'student.behavior' => function ($q) use ($school_id, $sess_id, $term_id) {
                 $q->where(['school_id' => $school_id, 'sess_id' => $sess_id, 'term_id' => $term_id]);
-            }, 'student.skill' => function ($q) use ($school_id, $sess_id, $term_id) {
+            },
+            'student.skill' => function ($q) use ($school_id, $sess_id, $term_id) {
+                $q->where(['school_id' => $school_id, 'sess_id' => $sess_id, 'term_id' => $term_id]);
+            },
+            'student.attendanceSummary' => function ($q) use ($school_id, $sess_id, $term_id) {
                 $q->where(['school_id' => $school_id, 'sess_id' => $sess_id, 'term_id' => $term_id]);
             },
         ])->where([

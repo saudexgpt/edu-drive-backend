@@ -66,7 +66,10 @@ class Student extends Model
     {
         return $this->belongsTo(User::class);
     }
-
+    public function attendanceSummary()
+    {
+        return $this->hasOne(ResultAttendanceSummary::class, 'student_id', 'id');
+    }
     public function studentGuardian()
     {
         return $this->hasOne(GuardianStudent::class, 'student_id', 'id');

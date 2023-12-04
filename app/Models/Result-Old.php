@@ -112,74 +112,84 @@ class Result extends Model
 
     public function updateResultDetails($result_detail, $result_settings)
     {
-        // $sub_attendance_obj = new SubjectAttendance();
-        // $attendance_score_limit = $result_settings->attendance_score_limit;
+        $sub_attendance_obj = new SubjectAttendance();
+        $attendance_score_limit = $result_settings->attendance_score_limit;
 
-        // $student_id = $result_detail->student_id;
-        // $school_id = $result_detail->school_id;
-        // $subject_teacher_id = $result_detail->subject_teacher_id;
-        // $sess_id = $result_detail->sess_id;
-        // $term_id = $result_detail->term_id;
+        $student_id = $result_detail->student_id;
+        $school_id = $result_detail->school_id;
+        $subject_teacher_id = $result_detail->subject_teacher_id;
+        $sess_id = $result_detail->sess_id;
+        $term_id = $result_detail->term_id;
 
-        // $result_detail->attendance_score = $sub_attendance_obj->studentSubjectAttendanceScore($student_id, $school_id, $subject_teacher_id, $sess_id, $term_id, $attendance_score_limit);
-
-        $test = $this->addCaScores($result_detail, $result_settings);
-        $result_detail->total = $test + $result_detail->exam;
-        $result_detail->save();
+        $result_detail->attendance_score = $sub_attendance_obj->studentSubjectAttendanceScore($student_id, $school_id, $subject_teacher_id, $sess_id, $term_id, $attendance_score_limit);
 
 
-        $result_detail->test = $test;
+        $result_detail->test = $this->addCaScores($result_detail, $result_settings);
 
         $result_detail->mid_term = $result_detail->mid_term1 + $result_detail->mid_term2;
         $result_detail->midterm_to_ca = convertPercentToUnitScore($result_detail->mid_term, $result_settings->midterm_score_limit);
+
         return $result_detail;
     }
 
     public function addCaScores($result_detail, $result_settings)
     {
-        // $sub_attendance_obj = new SubjectAttendance();
-        // $attendance_score_limit = $result_settings->attendance_score_limit;
+        $sub_attendance_obj = new SubjectAttendance();
+        $attendance_score_limit = $result_settings->attendance_score_limit;
 
-        // $student_id = $result_detail->student_id;
-        // $school_id = $result_detail->school_id;
-        // $subject_teacher_id = $result_detail->subject_teacher_id;
-        // $sess_id = $result_detail->sess_id;
-        // $term_id = $result_detail->term_id;
+        $student_id = $result_detail->student_id;
+        $school_id = $result_detail->school_id;
+        $subject_teacher_id = $result_detail->subject_teacher_id;
+        $sess_id = $result_detail->sess_id;
+        $term_id = $result_detail->term_id;
 
         $total_ca_score = 0;
         $no_of_ca = $result_settings->no_of_ca;
         $display_exam_score_only_for_full_term = $result_settings->display_exam_score_only_for_full_term;
         $mid_term = 0;
         $attendance_score = 0;
+        // if ($result_settings->display_exam_score_only_for_full_term === 'no') {
+        // we want to make sure that previous inputed results before the major upgrade
+        // remain the same so that there would be no descrepancies.
+        // The major upgrade will affect result that will be with date from year 2022 and upwards
 
+        $result_date = (int) date('Y', strtotime($result_detail->updated_at));
+        if ($result_date < 2022) {
 
-
-
-        if ($result_settings->add_midterm_score_to_full_result == 'yes') {
-
-            $mid_term_score = $result_detail->mid_term1 + $result_detail->mid_term2;
-            $midterm_score_limit = $result_settings->midterm_score_limit;
-            $mid_term = convertPercentToUnitScore($mid_term_score, $midterm_score_limit);
-        }
-        ///////////////////WE  HAVE DISABLED THE CONVERSION OF ATTENDANCE SCORES TO CA////////
-        // if ($result_settings->add_attendance_to_ca == 'yes') {
-
-        //     $attendance_score = $sub_attendance_obj->studentSubjectAttendanceScore($student_id, $school_id, $subject_teacher_id, $sess_id, $term_id, $attendance_score_limit);
-        // }
-        //////////////////////////////////////////////////////////////////////////////////////////
-
-
-
-        // we want to make sure ca tests are calculated along exam only when $display_exam_score_only_for_full_term is 'no'
-        if ($display_exam_score_only_for_full_term  === 'no') {
-
-            for ($i = 1; $i <= $no_of_ca; $i++) {
-                $assessment = 'ca' . $i;
-                $score = $result_detail->$assessment;
-                $total_ca_score += ($score) ? $score : 0;
+            $ca1 = $result_detail->ca1;
+            $ca2 = $result_detail->ca2;
+            $ca3 = $result_detail->ca3;
+            if ($result_settings->add_midterm_score_to_full_result == 'yes') {
+                $mid_term = $result_detail->mid_term1 / 10;
+                $total_ca_score = $this->addScores($mid_term, $ca1, $ca2, $ca3);
+            } else {
+                $total_ca_score = $this->addScores($ca1, $ca2, $ca3);
             }
-            $total_ca_score += $mid_term;
-            $total_ca_score += $attendance_score;
+        } else {
+
+            if ($result_settings->add_midterm_score_to_full_result == 'yes') {
+
+                $mid_term_score = $result_detail->mid_term1 + $result_detail->mid_term2;
+                $midterm_score_limit = $result_settings->midterm_score_limit;
+                $mid_term = convertPercentToUnitScore($mid_term_score, $midterm_score_limit);
+            }
+
+            if ($result_settings->add_attendance_to_ca == 'yes') {
+
+                $attendance_score = $sub_attendance_obj->studentSubjectAttendanceScore($student_id, $school_id, $subject_teacher_id, $sess_id, $term_id, $attendance_score_limit);
+            }
+
+            // we want to make sure ca tests are calculated along exam only when $display_exam_score_only_for_full_term is 'no'
+            if ($display_exam_score_only_for_full_term  === 'no') {
+
+                for ($i = 1; $i <= $no_of_ca; $i++) {
+                    $assessment = 'ca' . $i;
+                    $score = $result_detail->$assessment;
+                    $total_ca_score += ($score) ? $score : 0;
+                }
+                $total_ca_score += $mid_term;
+                $total_ca_score += $attendance_score;
+            }
         }
         // }
         return $total_ca_score;
@@ -250,7 +260,7 @@ class Result extends Model
                 } elseif ($total <= $higher_point and $total >= $lower_point) {
                     $grade = $grade_detail->grade;
                     $color = $grade_detail->color_code;
-                    $grade_point = sprintf("%01.1f", $grade_detail->grade_point);
+                    $grade_point = sprintf("%01.2f", $grade_detail->grade_point);
 
                     break;
                 }
@@ -418,17 +428,6 @@ class Result extends Model
             //$total_for_avg = $total_for_avg+$student_result->total;
             list($test, $total, $result_grade, $color, $grade_point) = $this->processResultInfo($student_result, $grades, $result_settings, $options);
 
-            $student_result = $this->updateResultDetails($student_result, $result_settings);
-
-            $student_cummulative_result = Result::groupBy('subject_teacher_id')->where([
-                'subject_teacher_id' => $subject_teacher_id,
-                'school_id' => $options['school_id'],
-                'sess_id' => $options['sess_id'],
-                'student_id' => $student_result->student_id,
-                'result_status' => 'Applicable'
-            ])
-                ->where('term_id', '<=', $options['term'])
-                ->select(\DB::raw('AVG(total) as cummulative_score'))->first();
 
             //fetch the performance of students for each subject in this class
             $subject_result_details = Result::where([
@@ -441,6 +440,7 @@ class Result extends Model
 
             list($subject_class_average, $subject_highest_score, $subject_lowest_score, $male_average, $female_average, $subject_totals) = $this->subjectStudentPerformance($subject_result_details, $grades, $result_settings, $options);
 
+            $student_result = $this->updateResultDetails($student_result, $result_settings);
 
             $student_result->test = $test;
             $student_result->total = $total;
@@ -454,13 +454,6 @@ class Result extends Model
             $student_result->male_average = $male_average;
             $student_result->female_average = $female_average;
             $student_result->subject_totals = $subject_totals;
-
-            $student_result->cummulative_score = sprintf("%01.1f", $student_cummulative_result->cummulative_score);
-
-            list($cgrade, $ccolor, $cgrade_point) = $this->resultGrade($student_result->cummulative_score, $grades);
-
-            $student_result->cummulative_grade = $cgrade;
-
             if ($total != null) {
                 $result_count++;
                 $total_subject_class_average += $subject_class_average;

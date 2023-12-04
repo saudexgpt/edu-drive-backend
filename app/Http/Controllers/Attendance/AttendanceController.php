@@ -14,6 +14,7 @@ use App\Models\ClassTeacher;
 use App\Models\School;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Models\ResultAttendanceSummary;
 use App\Models\StudentsInClass;
 
 class AttendanceController extends Controller
@@ -488,5 +489,35 @@ class AttendanceController extends Controller
         return $attendance =  response()->json([
             'attendance' => $options
         ]);
+    }
+
+    public function saveResultAttendanceSummary(Request $request)
+    {
+        $school_id = $this->getSchool()->id;
+        $class_teacher_id = $request->class_teacher_id;
+        $sess_id = $this->getSession()->id;
+        $term_id = $request->term_id;
+        $student_id = $request->student_id;
+        $result_attendance_summary = ResultAttendanceSummary::where([
+            'school_id' => $school_id,
+            'class_teacher_id' => $class_teacher_id,
+            'sess_id' => $sess_id,
+            'term_id' => $term_id,
+            'student_id' => $student_id,
+        ])->first();
+        if (!$result_attendance_summary) {
+            $result_attendance_summary = new ResultAttendanceSummary();
+        }
+        $result_attendance_summary->school_id = $school_id;
+        $result_attendance_summary->class_teacher_id = $class_teacher_id;
+        $result_attendance_summary->sess_id = $sess_id;
+        $result_attendance_summary->term_id = $term_id;
+        $result_attendance_summary->student_id = $student_id;
+        $result_attendance_summary->opened = $request->opened;
+        $result_attendance_summary->present = $request->present;
+        $result_attendance_summary->absent = $request->absent;
+        $result_attendance_summary->save();
+
+        return 'success';
     }
 }

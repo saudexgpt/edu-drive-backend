@@ -216,7 +216,7 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
         Route::get('create/subject', [AttendanceController::class, 'createSubjectAttendance']);
         Route::post('store/subject', [AttendanceController::class, 'storeSubjectAttendance']);
         //Route::get('fetch-level', 'AttendanceController@fetchLevelAttendanceChart');
-
+        Route::post('save-result-attendance-summary', [AttendanceController::class, 'saveResultAttendanceSummary']);
     });
     Route::group(['prefix' => 'assignment'], function () {
         Route::get('/view-assignment', [AssignmentsController::class, 'index']);

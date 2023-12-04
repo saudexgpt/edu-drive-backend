@@ -1040,7 +1040,7 @@ class ResultsController extends Controller
                 'student_id' => $student_id,
                 'result_status' => 'Applicable'
             ]
-        )->orderBy('subject_teacher_id')->get();
+        )->get();
 
         $students_in_class = StudentsInClass::where([
             'class_teacher_id' => $class_teacher_id,
