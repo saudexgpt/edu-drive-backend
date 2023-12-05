@@ -11,8 +11,9 @@ use App\Models\State;
 use App\Models\Student;
 use App\Models\StudentsInClass;
 use Auth;
-
+use Image;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Laracasts\Flash\Flash;
 
 class UsersController extends Controller
@@ -170,28 +171,112 @@ class UsersController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
+
+
+    // public function uploadPhotoOld(Request $request) {
+    //     $this->validate($request, [
+    //         'photo' => 'required|photo|mimes:jpeg,png,jpg,gif,svg|max:2048',
+    //     ]);
+    //     $school = $this->getSchool();
+
+    //     $folder_key = ($school) ? "schools/" . $school->folder_key . '/profile_img' : 'photo';
+    //     $user = User::find($request->user_id);
+    //     if ($request->file('photo') != null && $request->file('photo')->isValid()) {
+    //         $mime = $request->file('photo')->getClientMimeType();
+
+    //         if ($mime == 'image/png' || $mime == 'image/jpeg' || $mime == 'image/jpg' || $mime == 'image/gif') {
+    //             $name = str_replace('@', '_', $user->username);
+    //             $name = str_replace('/', '_', $user->username);
+    //             $name = str_replace('.', '_', $name) . "." . $request->file('photo')->guessClientExtension();
+    //             $photo_name = $user->uploadFile($request, $name, $folder_key);
+    //             $user->photo = $photo_name;
+    //             $user->save();
+    //         }
+    //     }
+    //     return $user->photo;
+    // }
+
+    // public function resizeOlderBiggerImages(Request $request)
+    // {
+    //     //
+    //     $users = User::where('photo', 'LIKE', '%profile_img%')->get();
+    //     foreach ($users as $user) {
+
+    //         if (Storage::disk('public')->exists($user->photo)) {
+    //             $path_array = explode('/', $user->photo);
+    //             $school_folder_key = $path_array[1];
+    //             $file_name = $path_array[3];
+
+    //             $image = Image::make('storage/' . $user->photo);
+
+    //             $folder_key = "schools/" . $school_folder_key . '/profile_img';
+    //             $imageName = time() . '-' . $file_name;
+
+    //             $destinationPath = portalPulicPath($folder_key);
+    //             // $image->orientate();
+    //             // $image->resize(250, 250);
+    //             $image->resize(null, 250, function ($constraint) {
+    //                 $constraint->aspectRatio();
+    //             });
+    //             $image->save($destinationPath . $imageName);
+
+
+    //             $user->photo = $folder_key . '/' . $imageName;
+    //             $user->save();
+    //         }
+    //     }
+
+
+    //     return $user->photo;
+    // }
     public function updatePhoto(Request $request)
     {
-        //
+
+        $this->validate($request, [
+
+            'photo' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:10240',
+
+        ]);
+
+
         $school = $this->getSchool();
-
-        $folder_key = ($school) ? "schools/" . $school->folder_key . '/profile_img' : 'photo';
         $user = User::find($request->user_id);
-        if ($request->file('photo') != null && $request->file('photo')->isValid()) {
-            $mime = $request->file('photo')->getClientMimeType();
+        if ($request->hasFile('photo')) {
 
-            if ($mime == 'image/png' || $mime == 'image/jpeg' || $mime == 'image/jpg' || $mime == 'image/gif') {
-                $name = str_replace('@', '_', $user->username);
-                $name = str_replace('/', '_', $user->username);
-                $name = str_replace('.', '_', $name) . "." . $request->file('photo')->guessClientExtension();
-                $photo_name = $user->uploadFile($request, $name, $folder_key);
-                $user->photo = $photo_name;
-                $user->save();
+
+            $image = Image::make($request->file('photo'));
+
+            /**
+
+             * Main Image Upload on Folder Code
+
+             */
+            $folder_key = ($school) ? "schools/" . $school->folder_key . '/profile_img' : 'photo';
+
+            // delete older uploads
+            if ($school) {
+
+                if (Storage::disk('public')->exists($user->photo)) {
+                    Storage::disk('public')->delete($user->photo);
+                }
             }
+            $imageName = time() . '-' . $request->file('photo')->getClientOriginalName();
+
+            $destinationPath = portalPulicPath($folder_key);
+            $image->orientate();
+            // $image->resize(250, 250);
+            $image->resize(null, 250, function ($constraint) {
+                $constraint->aspectRatio();
+            });
+            $image->save($destinationPath . $imageName);
+
+
+            $user->photo = $folder_key . '/' . $imageName;
+            $user->save();
         }
+
         return $user->photo;
     }
-
     /**
      * Update the specified resource in storage.
      *

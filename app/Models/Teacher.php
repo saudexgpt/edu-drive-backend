@@ -95,50 +95,50 @@ class Teacher extends Model
     public function teacherSubjectStudents($subject_teacher, $sess_id, $term_id, $school_id)
     {
         $student_offering_subjects_obj =  new StudentsOfferingSubject();
-        $students =  $this->teacherClassStudents($subject_teacher->class_teacher_id, $sess_id, $term_id, $school_id);
-        foreach ($students as $student) {
-            if ($student != null) {
-                $student_offering_subjects_obj->addStudentToSubjectClass($student->id, $subject_teacher->id, $sess_id, $term_id, $school_id);
-            }
-        }
-        return $students;
+        // $students =  $this->teacherClassStudents($subject_teacher->class_teacher_id, $sess_id, $term_id, $school_id);
+        // foreach ($students as $student) {
+        //     if ($student != null) {
+        //         $student_offering_subjects_obj->addStudentToSubjectClass($student->id, $subject_teacher->id, $sess_id, $term_id, $school_id);
+        //     }
+        // }
+        // return $students;
 
         // return $this->teacherClassStudents($class_teacher_id, $sess_id, $term_id, $school_id);
-        // $students_offering_subjects = StudentsOfferingSubject::with(['student' => function ($query) {
-        //     $query->ActiveAndSuspended();
-        // }, 'student.user'])->where([
-        //     'subject_teacher_id' => $subject_teacher->id,
-        //     'sess_id' => $sess_id,
-        //     //'term_id'=>$term_id,
-        //     'school_id' => $school_id
-        // ])->get();
+        $students_offering_subjects = StudentsOfferingSubject::with(['student' => function ($query) {
+            $query->ActiveAndSuspended();
+        }, 'student.user'])->where([
+            'subject_teacher_id' => $subject_teacher->id,
+            'sess_id' => $sess_id,
+            //'term_id'=>$term_id,
+            'school_id' => $school_id
+        ])->get();
 
-        // if ($students_offering_subjects->isEmpty()) {
-        //     $students =  $this->teacherClassStudents($subject_teacher->class_teacher_id, $sess_id, $term_id, $school_id);
-        //     foreach ($students as $student) {
-        //         if ($student != null) {
-        //             $student_offering_subjects_obj->addStudentToSubjectClass($student->id, $subject_teacher->id, $sess_id, $term_id, $school_id);
-        //         }
-        //     }
-        //     return $students;
-        // } else {
+        if ($students_offering_subjects->isEmpty()) {
+            $students =  $this->teacherClassStudents($subject_teacher->class_teacher_id, $sess_id, $term_id, $school_id);
+            foreach ($students as $student) {
+                if ($student != null) {
+                    $student_offering_subjects_obj->addStudentToSubjectClass($student->id, $subject_teacher->id, $sess_id, $term_id, $school_id);
+                }
+            }
+            return $students;
+        } else {
 
-        //     $students = [];
-        //     foreach ($students_offering_subjects as $student_in_class) :
-        //         if ($student_in_class->student != null) {
-        //             # code...
+            $students = [];
+            foreach ($students_offering_subjects as $student_in_class) :
+                if ($student_in_class->student != null) {
+                    # code...
 
-        //             $student = $student_in_class->student;
-        //             $student->skill = $student->skills()->where(['school_id' => $school_id, 'sess_id' => $sess_id, 'term_id' => $term_id])->first();
+                    $student = $student_in_class->student;
+                    $student->skill = $student->skills()->where(['school_id' => $school_id, 'sess_id' => $sess_id, 'term_id' => $term_id])->first();
 
-        //             $student->behavior = $student->behaviors()->where(['school_id' => $school_id, 'sess_id' => $sess_id, 'term_id' => $term_id])->first();
-        //             $students[] = $student;
-        //         }
-        //     endforeach;
+                    $student->behavior = $student->behaviors()->where(['school_id' => $school_id, 'sess_id' => $sess_id, 'term_id' => $term_id])->first();
+                    $students[] = $student;
+                }
+            endforeach;
 
 
-        //     return $students;
-        // }
+            return $students;
+        }
     }
 
 
