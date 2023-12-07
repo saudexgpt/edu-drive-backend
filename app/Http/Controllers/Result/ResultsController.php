@@ -1525,11 +1525,14 @@ class ResultsController extends Controller
             'sub_term' => $sub_term,
             'student_id' => $student_id
         ])->first();
-
+        if ($remark_by == 'house_parent') {
+            $student_remark->house_parent_remark = $remark;
+        }
         if ($remark_by == 'class_teacher') {
             $student_remark->class_teacher_remark = $remark;
             $student_remark->class_teacher_status = 'custom';
-        } else {
+        }
+        if ($remark_by == 'head_teacher') {
             $student_remark->head_teacher_remark = $remark;
             $student_remark->head_teacher_status = 'custom';
         }
