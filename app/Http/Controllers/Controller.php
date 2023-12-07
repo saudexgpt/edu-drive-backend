@@ -358,7 +358,7 @@ class Controller extends BaseController
     {
         $school_id = $this->getSchool()->id;
 
-        $grades = Grade::with('curriculumLevelGroup')->where(['school_id' => $school_id, 'curriculum_level_group_id' => $curriculum_level_group_id])->orderBy('grade')->get();
+        $grades = Grade::with('curriculumLevelGroup')->where(['school_id' => $school_id, 'curriculum_level_group_id' => $curriculum_level_group_id])->orderBy('upper_limit', 'DESC')->get();
         return $grades;
     }
     public function setLevels()
