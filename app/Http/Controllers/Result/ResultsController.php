@@ -845,7 +845,7 @@ class ResultsController extends Controller
 
         $all_students_in_class = StudentsInClass::with([
             'student.user',
-            'classTeacher.subjectTeachers.subject'
+            // 'classTeacher.subjectTeachers.subject'
         ])->where([
             'class_teacher_id' => $class_teacher_id,
             'school_id' => $school_id,

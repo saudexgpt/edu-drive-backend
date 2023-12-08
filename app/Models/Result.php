@@ -506,11 +506,14 @@ class Result extends Model
         }
         $result_settings = $options['result_settings'];
 
-        $class_subjects = SubjectTeacher::with('subject')->where([
-            'class_teacher_id' => $class_teacher_id,
-            'school_id' => $school_id
-        ])/*->where('teacher_id', '!=', NULL)*/->orderBy('id')->get();
-
+        // $class_subjects = SubjectTeacher::with('subject')->where([
+        //     'class_teacher_id' => $class_teacher_id,
+        //     'school_id' => $school_id
+        // ])/*->where('teacher_id', '!=', NULL)*/->orderBy('id')->get();
+        $class_subjects = SubjectTeacher::join('subjects', 'subject_teachers.subject_id', '=', 'subjects.id')->where([
+            'subject_teachers.class_teacher_id' => $class_teacher_id,
+            'subject_teachers.school_id' => $school_id
+        ])/*->where('teacher_id', '!=', NULL)*/->orderBy('subjects.name')->select('subject_teachers.id as id', 'subjects.name as subject_name')->get();
         $result_details_array = [];
         if ($class_subjects->isNotEmpty()) {
 
@@ -519,13 +522,16 @@ class Result extends Model
             $count = 0;
             $result_details = [];
             foreach ($class_subjects as $subject_teacher) :
+                $sub_id = $subject_teacher->id;
+                $subject_name = $subject_teacher->subject_name;
+                $subjects[$sub_id] = $subject_name;
 
                 $total = null;
                 $color = '';
                 $grade_point = null;
-                $student_result = Result::with('subjectTeacher.subject')->where(
+                $student_result = Result::where(
                     [
-                        'subject_teacher_id' => $subject_teacher->id,
+                        'subject_teacher_id' => $sub_id,
                         'school_id' => $school_id,
                         'sess_id' => $sess_id,
                         'term_id' => $term_id,
@@ -534,65 +540,49 @@ class Result extends Model
                     ]
                 )->where($approval_status, '!=', 'Not Submitted')->first();
                 if ($student_result) {
-                    // $student_result = Result::with('subjectTeacher.subject')->where(
-                    //     [
-                    //         'subject_teacher_id' => $subject_teacher->id,
-                    //         'school_id' => $school_id,
-                    //         'sess_id' => $sess_id,
-                    //         'term_id' => $term_id,
-                    //         'student_id' => $student_id,
-                    //         'result_status' => 'Applicable'
-                    //     ]
-                    // )->first();
-
-                    $sub_id = $subject_teacher->id;
-                    $subject_name =
-                        $subject_teacher->subject->code; // $subject_teacher->subject->name;
-
-                    $subjects[$sub_id] = $subject_name;
-                    if ($student_result) {
-                        # code...
-
-                        // check if result has been approved or not
-
-                        // list($view_half, $view_full, $status_half, $status_full) = $this->resultStatusAction(($student_result) ? $student_result : null);
-                        // $viewable = ['approved', 'published'];
-                        // if (($sub_term == 'half' && in_array($status_half, $viewable)) || ($sub_term == 'full' && in_array($status_full, $viewable))) {
 
 
-                        if ($sub_term == 'half') {
-                            $total = $student_result->mid_term1 + $student_result->mid_term2;
-                        } else {
+                    # code...
+
+                    // check if result has been approved or not
+
+                    // list($view_half, $view_full, $status_half, $status_full) = $this->resultStatusAction(($student_result) ? $student_result : null);
+                    // $viewable = ['approved', 'published'];
+                    // if (($sub_term == 'half' && in_array($status_half, $viewable)) || ($sub_term == 'full' && in_array($status_full, $viewable))) {
 
 
-                            $test = $this->addCaScores($student_result, $result_settings);
-                            $exam =  $student_result->exam;
-                            $total = $this->addScores($test, $exam);
-                        }
+                    if ($sub_term == 'half') {
+                        $total = $student_result->mid_term1 + $student_result->mid_term2;
+                    } else {
 
 
-                        list($grade, $color, $grade_point) = $this->resultGrade($total, $grades);
-
-                        // if ($sub_term == 'half') {
-                        //     //return to the normal value
-                        //     $total_ca = $student_result->ca1 + $student_result->ca2;
-                        //     $total = $total_ca;
-                        // }
-                        if ($total != null) {
-                            $count++;
-                            $total_score += $total;
-                        }
-
-                        $student_result = $this->updateResultDetails($student_result, $result_settings);
-                        $student_result->total = $total;
-                        $student_result->color = $color;
-                        $student_result->grade_point = $grade_point;
-                        $result_details[] = $student_result;
+                        $test = $this->addCaScores($student_result, $result_settings);
+                        $exam =  $student_result->exam;
+                        $total = $this->addScores($test, $exam);
                     }
 
-                    $result_details_array[] = ['name' => $subject_name, 'color' => $color, 'grade' => $total, 'total' => $total, 'grade_point' => $grade_point];
+
+                    list($grade, $color, $grade_point) = $this->resultGrade($total, $grades);
+
+                    // if ($sub_term == 'half') {
+                    //     //return to the normal value
+                    //     $total_ca = $student_result->ca1 + $student_result->ca2;
+                    //     $total = $total_ca;
+                    // }
+                    if ($total != null) {
+                        $count++;
+                        $total_score += $total;
+                    }
+
+                    $student_result = $this->updateResultDetails($student_result, $result_settings);
+                    $student_result->total = $total;
+                    $student_result->color = $color;
+                    $student_result->grade_point = $grade_point;
                 }
 
+                $result_details[] = $student_result;
+
+                $result_details_array[] = ['name' => $subject_name, 'color' => $color, 'grade' => $total, 'total' => $total, 'grade_point' => $grade_point];
             endforeach;
 
             $student->result_details = $result_details;

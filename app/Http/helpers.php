@@ -423,7 +423,7 @@ function defaultComment($total)
     } else if ($total >= 40 && $total <= 44.99) {
         $comment = "Put in more effort. Fair Performance";
     } else {
-        $comment = "Sit up and be serious. Poor Performance";
+        $comment = "Urgent help needed. Weak Performance";
     }
 
     return $comment;
