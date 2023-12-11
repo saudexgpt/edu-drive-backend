@@ -442,6 +442,11 @@ class Result extends Model
             list($subject_class_average, $subject_highest_score, $subject_lowest_score, $male_average, $female_average, $subject_totals) = $this->subjectStudentPerformance($subject_result_details, $grades, $result_settings, $options);
 
 
+            $mid_term_score = $student_result->mid_term1 + $student_result->mid_term2;
+            $exam = $student_result->total;
+            $midterm_and_exam_average = ($mid_term_score + $exam) / 2;
+
+
             $student_result->test = $test;
             $student_result->total = $total;
             $student_result->result_grade = $result_grade;
@@ -454,8 +459,13 @@ class Result extends Model
             $student_result->male_average = $male_average;
             $student_result->female_average = $female_average;
             $student_result->subject_totals = $subject_totals;
+            if ($result_settings->make_cummulative_average_of_exam_and_midterm == 'yes') {
+                $student_result->cummulative_score =
+                    sprintf("%01.1f", $midterm_and_exam_average);
+            } else {
+                $student_result->cummulative_score = sprintf("%01.1f", $student_cummulative_result->cummulative_score);
+            }
 
-            $student_result->cummulative_score = sprintf("%01.1f", $student_cummulative_result->cummulative_score);
 
             list($cgrade, $ccolor, $cgrade_point) = $this->resultGrade($student_result->cummulative_score, $grades);
 
