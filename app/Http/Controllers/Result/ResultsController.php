@@ -266,7 +266,7 @@ class ResultsController extends Controller
         $subject_teacher_id = $request->subject_teacher_id;
         $sub_term = $request->sub_term;
 
-        $subject_teacher = SubjectTeacher::with('subject')->find($subject_teacher_id);
+        $subject_teacher = SubjectTeacher::with('subject', 'classTeacher')->find($subject_teacher_id);
 
         $class_teacher = $subject_teacher->classTeacher;
         $class_teacher_id = $class_teacher->id;
