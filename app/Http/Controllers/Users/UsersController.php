@@ -176,7 +176,7 @@ class UsersController extends Controller
     public function updatePhoto(Request $request)
     {
         $this->validate($request, [
-            'photo' => 'required|photo|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
         $school = $this->getSchool();
 
