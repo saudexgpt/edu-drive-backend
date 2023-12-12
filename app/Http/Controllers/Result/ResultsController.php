@@ -562,7 +562,7 @@ class ResultsController extends Controller
         }
 
 
-        $student_result_detail->$label = $score;
+        $student_result_detail->$label = (int) $score;
 
         // if ($sub_term === 'half') {
 
