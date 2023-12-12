@@ -31,7 +31,7 @@ class StaffController extends Controller
     public function index()
     {
         $school = $this->getSchool();
-        $staff = Staff::with(['user.roles', /*'user.country.states.lgas',*/ 'user.state', 'user.lga'])->where('school_id', $school->id)->get();
+        $staff = Staff::with(['user.roles', 'user.country', 'user.state', 'user.lga'])->where('school_id', $school->id)->get();
         foreach ($staff as $each_staff) {
             if ($each_staff->user) {
 
