@@ -840,7 +840,7 @@ class ResultsController extends Controller
         $result_settings = $this->getResultSettings($curriculum_level_group_id);
         $sess_id = $request->sess_id;
         $term_id = $request->term_id;
-        $sub_term = $request->sub_term;
+        $sub_term = (isset($request->sub_term) && $request->sub_term !== '') ? $request->sub_term : 'full';
 
 
         $all_students_in_class = StudentsInClass::with([
