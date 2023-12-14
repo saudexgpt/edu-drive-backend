@@ -962,7 +962,11 @@ class ResultsController extends Controller
         $student_id = (int) $request->student_id;
         $class_teacher_id = (int) $request->class_teacher_id;
 
-        $student_in_class = StudentsInClass::with(['classTeacher.staff.user', 'student.user', 'classTeacher.c_class'])->where([
+        $student_in_class = StudentsInClass::with(['classTeacher.staff' => function ($q) {
+            $q->withTrashed();
+        }, 'classTeacher.staff.user' => function ($q) {
+            $q->withTrashed();
+        }, 'student.user', 'classTeacher.c_class'])->where([
             'class_teacher_id' => $class_teacher_id,
             'sess_id' => $sess_id,
             // 'term_id' => $term_id,
