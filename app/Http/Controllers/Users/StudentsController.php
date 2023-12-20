@@ -94,6 +94,12 @@ class StudentsController extends Controller
         }
         return 'success';
     }
+    public function fetchStudentsOnlyList()
+    {
+        $school_id = $this->getSchool()->id;
+        $students = Student::with('user')->where('school_id', $school_id)->get();
+        return response()->json(compact('students'), 200);
+    }
     public function allStudentsTable(Request $request)
     {
         set_time_limit(0);
@@ -476,25 +482,25 @@ class StudentsController extends Controller
         $error = [];
         foreach ($bulk_data as $csvRow) {
             //try {
-                $request->last_name = trim($csvRow->SURNAME);
-                $request->first_name = trim($csvRow->OTHER_NAMES);
-                $request->gender = trim(strtolower($csvRow->GENDER));
-                $request->dob = str_replace('/', '-', trim($csvRow->DOB));
+            $request->last_name = trim($csvRow->SURNAME);
+            $request->first_name = trim($csvRow->OTHER_NAMES);
+            $request->gender = trim(strtolower($csvRow->GENDER));
+            $request->dob = str_replace('/', '-', trim($csvRow->DOB));
 
-                $request->admission_year    =   trim($csvRow->ADMISSION_YEAR);
-                $request->registration_no = trim($csvRow->ADMISSION_NO);
-                $request->fname             =   trim($csvRow->PARENT_FIRST_NAME);
-                $request->lname             =   trim($csvRow->PARENT_LAST_NAME);
-                $request->parent_phone      =   (isset($csvRow->PARENT_PHONE_1)) ? trim($csvRow->PARENT_PHONE_1) : NULL;
-                $request->parent_phone2     =   (isset($csvRow->PARENT_PHONE_2)) ? trim($csvRow->PARENT_PHONE_2) : NULL;
-                $request->email             =  (isset($csvRow->PARENT_EMAIL)) ? trim($csvRow->PARENT_EMAIL) : NULL;
-                $request->occupation        =   (isset($csvRow->PARENT_OCCUPATION)) ? trim($csvRow->PARENT_OCCUPATION) : NULL;
-                $request->address           =   (isset($csvRow->RESIDENTIAL_ADDRESS)) ? trim($csvRow->RESIDENTIAL_ADDRESS) : NULL;
-                $request->religion          =   (isset($csvRow->RELIGION)) ? trim($csvRow->RELIGION) : NULL;
+            $request->admission_year    =   (isset($csvRow->ADMISSION_YEAR)) ? trim($csvRow->ADMISSION_YEAR) : NULL;
+            $request->registration_no = (isset($csvRow->ADMISSION_NO)) ? trim($csvRow->ADMISSION_NO) : NULL;
+            $request->fname             =   trim($csvRow->PARENT_FIRST_NAME);
+            $request->lname             =   trim($csvRow->PARENT_LAST_NAME);
+            $request->parent_phone      =   (isset($csvRow->PARENT_PHONE_1)) ? trim($csvRow->PARENT_PHONE_1) : NULL;
+            $request->parent_phone2     =   (isset($csvRow->PARENT_PHONE_2)) ? trim($csvRow->PARENT_PHONE_2) : NULL;
+            $request->email             =  (isset($csvRow->PARENT_EMAIL)) ? trim($csvRow->PARENT_EMAIL) : NULL;
+            $request->occupation        =   (isset($csvRow->PARENT_OCCUPATION)) ? trim($csvRow->PARENT_OCCUPATION) : NULL;
+            $request->address           =   (isset($csvRow->RESIDENTIAL_ADDRESS)) ? trim($csvRow->RESIDENTIAL_ADDRESS) : NULL;
+            $request->religion          =   (isset($csvRow->RELIGION)) ? trim($csvRow->RELIGION) : NULL;
 
 
-                //store the entry for this student
-                $this->storeBulkStudent($request);
+            //store the entry for this student
+            $this->storeBulkStudent($request);
             // } catch (\Throwable $th) {
             //     $unsaved_data[] = $csvRow;
             //     $error[] = $th;

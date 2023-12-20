@@ -8,6 +8,7 @@ use App\Models\Guardian;
 use App\Models\Student;
 use App\Models\CClass;
 use App\Models\ClassTeacher;
+use App\Models\GuardianStudent;
 use App\Models\StudentsInClass;
 use App\Models\LocalGovernmentArea;
 use App\Models\State;
@@ -115,6 +116,26 @@ class GuardiansController extends Controller
         $guardian->save();
     }
 
+    public function addChildrenToParent(Request $request, Guardian $guardian)
+    {
+        // $school_id = $this->getSchool()->id;
+        $student_ids = $request->student_ids;
+        foreach ($student_ids as $student_id) {
+            $guardian_student = GuardianStudent::where('student_id', $student_id)->first();
+            if (!$guardian_student) {
+                $guardian_student = new GuardianStudent();
+            }
+
+
+
+            //save new relationship
+            $guardian_student->guardian_id = $guardian->id;
+            $guardian_student->student_id = $student_id;
+            $guardian_student->relationship = 'Parent';
+            $guardian_student->save();
+            # code...
+        }
+    }
     /**
      * @param $id
      * @return \Illuminate\Contracts\View\Factory|\Illuminate\Http\RedirectResponse|\Illuminate\View\View

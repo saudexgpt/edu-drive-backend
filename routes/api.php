@@ -580,6 +580,7 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
 
     });
     Route::group(['prefix' => 'user-setup'], function () {
+        Route::get('fetch-students-only-list', [StudentsController::class, 'fetchStudentsOnlyList']);
 
         Route::get('duplicate-students', [StudentsController::class, 'duplicateStudentsInClass']);
         Route::delete('remove-duplicate-student/{student_in_class}', [StudentsController::class, 'removeDuplicateStudent']);
@@ -619,6 +620,7 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
         Route::post('save-parent', [GuardiansController::class, 'store']);
         Route::put('update-parent/{user}', [GuardiansController::class, 'update']);
         Route::get('guardian/show/{guardian}', [GuardiansController::class, 'show']);
+        Route::put('add-children-to-parent/{guardian}', [GuardiansController::class, 'addChildrenToParent']);
     });
 
     Route::group(['prefix' => 'guardian'], function () {
