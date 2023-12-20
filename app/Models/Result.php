@@ -452,7 +452,6 @@ class Result extends Model
             $student_result->result_grade = $result_grade;
             $student_result->color = $color;
             $student_result->grade_point = $grade_point;
-            $student_result->remark = $this->resultRemark($result_grade, $grades);
             $student_result->subject_class_average = $subject_class_average;
             $student_result->subject_highest_score = $subject_highest_score;
             $student_result->subject_lowest_score = $subject_lowest_score;
@@ -470,6 +469,13 @@ class Result extends Model
             list($cgrade, $ccolor, $cgrade_point) = $this->resultGrade($student_result->cummulative_score, $grades);
 
             $student_result->cummulative_grade = $cgrade;
+            if ($result_settings->display_cummulative_score_on_result_sheet == 'yes') {
+
+                $student_result->remark = $this->resultRemark($cgrade, $grades);
+            } else {
+
+                $student_result->remark = $this->resultRemark($result_grade, $grades);
+            }
 
             if ($total != null) {
                 $result_count++;
