@@ -1046,25 +1046,31 @@ class ResultsController extends Controller
             ]
         )->orderBy('subject_teacher_id')->get();
 
-        $students_in_class = StudentsInClass::where([
+        $students_in_class = StudentsInClass::with('student')->where([
             'class_teacher_id' => $class_teacher_id,
             'sess_id' => $sess_id,
             // 'term_id' => $term_id,
             'school_id' => $school_id,
         ])->get();
 
-        $no_in_class = $students_in_class->count();
+        // $no_in_class = $students_in_class->count();
 
 
 
         ////////////////////THIS IS NEEDED TO CALCULATE CLASS AVERAGES/////////////////////////
         $result_averages = []; //keep the averages for each student in an array to eable ranking
         $student_average = 0;
+        $no_in_class = 0;
         foreach ($students_in_class as $class_student) {
-            $analyzed_result = $result->analyseStudentsResult($class_student->student, $options);
+            $student = $class_student->student;
+            $analyzed_result = $result->analyseStudentsResult($student, $options);
             $result_averages[] = $analyzed_result->average; //keep the averages for each student in an array to eable ranking
             if ($class_student->student_id === $student_id) {
                 $student_average = $analyzed_result->average;
+            }
+
+            if ($student->studentship_status == 'active') {
+                $no_in_class++;
             }
         }
         ////////////////////////////////////////////////////////////////////////////////////////
