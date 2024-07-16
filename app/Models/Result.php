@@ -402,6 +402,8 @@ class Result extends Model
             $term_id = $options['term'];
             $grades = $options['grades'];
             $result_settings = $options['result_settings'];
+
+            
             // $result = Result::where([
             //     'sess_id' => $options['sess_id'],
             //     'school_id' => $options['school_id'],
@@ -458,6 +460,32 @@ class Result extends Model
             $student_result->male_average = $male_average;
             $student_result->female_average = $female_average;
             $student_result->subject_totals = $subject_totals;
+            if ($term_id === 3) {
+                $termly_totals = Result::where([
+                    'subject_teacher_id' => $subject_teacher_id,
+                    'school_id' => $options['school_id'],
+                    'sess_id' => $options['sess_id'],
+                    'student_id' => $student_result->student_id,
+                    'result_status' => 'Applicable'
+                ])->select('term_id', 'total')->get();
+                $cumulative_total = 0;
+                foreach ($termly_totals as $termly_total) {
+                    if ($termly_total->term_id == 1) {
+                        $student_result->first_term_total = $termly_total->total;
+                    }
+                    if ($termly_total->term_id == 2) {
+                        $student_result->second_term_total = $termly_total->total;
+                    }
+                    if ($termly_total->term_id == 3) {
+                        $student_result->third_term_total = $termly_total->total;
+                    }
+                    $cumulative_total += $termly_total->total;
+                }
+                $cumulative_average = $cumulative_total / 3;
+                $student_result->cumulative_total = $cumulative_total;
+                $student_result->cumulative_average = sprintf("%01.1f", $cumulative_average);
+                $student_result->max_score = 300;
+            }
             if ($result_settings->make_cummulative_average_of_exam_and_midterm == 'yes') {
                 $student_result->cummulative_score =
                     sprintf("%01.1f", $midterm_and_exam_average);

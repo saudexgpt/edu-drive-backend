@@ -456,6 +456,8 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
         Route::post('upload-bulk-result', [ResultsController::class, 'uploadBulkResult']);
         Route::get('get-recorded-result', [ResultsController::class, 'getRecordedResultForApproval']);
         Route::get('class-broadsheet', [ResultsController::class, 'classBroadSheet']);
+        Route::get('cummulative-class-broadsheet', [ResultsController::class, 'cummulativeClassBroadSheet']);
+        
         Route::get('get-student-result-details', [ResultsController::class, 'getStudentResultDetails']);
         Route::get('give-student-remark', [ResultsController::class, 'giveStudentRemark']);
         Route::get('fetch-result-display-settings', [ResultDisplaySettingsController::class, 'index']);

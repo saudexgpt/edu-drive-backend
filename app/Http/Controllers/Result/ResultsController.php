@@ -950,8 +950,88 @@ class ResultsController extends Controller
 
         return $this->render('errors.404', compact('message'));*/
     }
+    public function cummulativeClassBroadSheet(Request $request, Result $result)
+    {
+        $user = $this->getUser();
+        $class_teacher_id = $request->class_teacher_id;
+        //$term_spec = $request->term_spec;
+        $class_teacher = ClassTeacher::find($class_teacher_id);
+
+        $class_name = $class_teacher->c_class->name;
+
+        $school_id = $this->getSchool()->id;
+        $curriculum_level_group_id = $class_teacher->level->curriculum_level_group_id;
+        $grades = $this->getLevelGrades($curriculum_level_group_id);
+        $result_settings = $this->getResultSettings($curriculum_level_group_id);
+        $sess_id = $request->sess_id;
+        $term_id = $request->term_id;
+        $sub_term = (isset($request->sub_term) && $request->sub_term !== '') ? $request->sub_term : 'full';
 
 
+        $all_students_in_class = StudentsInClass::with([
+            'student.user',
+            // 'classTeacher.subjectTeachers.subject'
+        ])->where([
+            'class_teacher_id' => $class_teacher_id,
+            'school_id' => $school_id,
+            'sess_id' => $sess_id,
+            //'term_id'=>$term_id
+        ])->get();
+
+        $result_averages = []; //keep the averages for each student in an array to eable ranking
+        $result_subjects = [];
+        $result_details = [];
+        $students_in_class = [];
+        if ($all_students_in_class->isNotEmpty()) {
+            foreach ($all_students_in_class as $student_in_class) {
+                $student = $student_in_class->student;
+
+                if ($student->studentship_status !== 'left') {
+
+                    $options = [
+                        'class_teacher_id' => $class_teacher_id,
+                        'school_id' => $school_id,
+                        'sess_id' => $sess_id,
+                        'term' => $term_id,
+                        'sub_term' => $sub_term,
+                        'grades' => $grades,
+                        'result_settings' => $result_settings,
+                    ];
+                    $class_subjects = SubjectTeacher::join('subjects', 'subject_teachers.subject_id', '=', 'subjects.id')->where([
+                        'subject_teachers.class_teacher_id' => $class_teacher_id,
+                        'subject_teachers.school_id' => $school_id
+                    ])->orderBy('subjects.name')->select('subject_teachers.id as id', 'subjects.name as subject_name')->get();
+                    //}
+
+                    foreach ($class_subjects as $class_subject) {
+                        $result_subjects[] = $class_subject->subject_name;
+                        $termly_totals = Result::where([
+                            'subject_teacher_id' => $class_subject->id,
+                            'school_id' => $school_id,
+                                'sess_id' => $sess_id,
+                            'student_id' => $student_in_class->student_id,
+                            'result_status' => 'Applicable'
+                        ])->select('term_id', 'total')->get();
+                        foreach ($termly_totals as $termly_total) {
+                            list($grade, $color, $grade_point) = $result->resultGrade($termly_total->total, $grades);
+
+                            $termly_total->color = $color;
+                        }
+                        $class_subject->termly_totals = $termly_totals;
+                    }
+                    $student_in_class->student_result = $class_subjects;
+                    $students_in_class[] = $student_in_class;
+                }
+            }
+            $result_subjects = array_unique($result_subjects);
+            return $this->render(compact('students_in_class','sub_term', 'class_teacher_id', 'term_id', 'sess_id', 'class_name', 'result_subjects'));
+        }
+
+
+        /*$message = "No student found in ".$class_name.' for '.SSession::find($sess_id)->name.' session';
+
+        return $this->render('errors.404', compact('message'));*/
+    }
     public function getStudentResultDetails(Request $request, Result $result)
     {
         // return $request;
@@ -1091,10 +1171,7 @@ class ResultsController extends Controller
 
                 list($class_average_result_grade, $class_average_color, $class_average_grade_point) = $result->resultGrade($class_average, $grades);
 
-                $class_average_color = $class_average_color;
-
                 list($student_average_result_grade, $student_average_color, $student_average_grade_point) = $result->resultGrade($student_average, $grades);
-                $student_average_color = $student_average_color;
             }
 
             /////////////// WE NO LONGER NEED THIS TO CALCULATE ATTENTANCE///////////////////
