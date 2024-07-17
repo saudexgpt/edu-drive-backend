@@ -1012,12 +1012,18 @@ class ResultsController extends Controller
                             'student_id' => $student_in_class->student_id,
                             'result_status' => 'Applicable'
                         ])->select('term_id', 'total')->get();
+                        $termly_totals_array = [
+                            '1' => ['term_id' => 1, 'total' => 0, 'color' => '#ffffff'],
+                            '2' => ['term_id' => 2, 'total' => 0, 'color' => '#ffffff'],
+                            '3' => ['term_id' => 3, 'total' => 0, 'color' => '#ffffff'],
+                        ];
                         foreach ($termly_totals as $termly_total) {
                             list($grade, $color, $grade_point) = $result->resultGrade($termly_total->total, $grades);
 
                             $termly_total->color = $color;
+                            $termly_totals_array[ $termly_total->term_id] = $termly_total;
                         }
-                        $class_subject->termly_totals = $termly_totals;
+                        $class_subject->termly_totals = $termly_totals_array;
                     }
                     $student_in_class->student_result = $class_subjects;
                     $students_in_class[] = $student_in_class;
