@@ -481,10 +481,10 @@ class Result extends Model
                     }
                     $cumulative_total += $termly_total->total;
                 }
-                $cumulative_average = $cumulative_total / 3;
+                $cumulative_average = $cumulative_total / (count($termly_totals) > 0) ? count($termly_totals) : 1;
                 $student_result->cumulative_total = $cumulative_total;
                 $student_result->cumulative_average = sprintf("%01.1f", $cumulative_average);
-                $student_result->max_score = 300;
+                $student_result->max_score = count($termly_totals) * 100;
             }
             if ($result_settings->make_cummulative_average_of_exam_and_midterm == 'yes') {
                 $student_result->cummulative_score =
