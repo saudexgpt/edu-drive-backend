@@ -469,6 +469,7 @@ class Result extends Model
                     'result_status' => 'Applicable'
                 ])->select('term_id', 'total')->get();
                 $cumulative_total = 0;
+                $count = 0;
                 foreach ($termly_totals as $termly_total) {
                     if ($termly_total->term_id == 1) {
                         $student_result->first_term_total = $termly_total->total;
@@ -480,9 +481,12 @@ class Result extends Model
                         $student_result->third_term_total = $termly_total->total;
                     }
                     $cumulative_total += $termly_total->total;
+                    if ($termly_total->total > 0) {
+                        $count++;
+                    }
                 }
-                $count = count($termly_totals);
-                $cumulative_average = $cumulative_total / (($count) ? count($termly_totals) : 1);
+                $count = ($count > 0) ? $count : 1;
+                $cumulative_average = $cumulative_total / $count;
                 $student_result->cumulative_total = $cumulative_total;
                 $student_result->cumulative_average = sprintf("%01.1f", $cumulative_average);
                 $student_result->max_score = $count * 100;
