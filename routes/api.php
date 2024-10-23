@@ -79,6 +79,7 @@ Route::group(['prefix' => 'auth'], function () {
     });
 });
 
+Route::get('fetch-necessary-params', [Controller::class, 'fetchNecessayParams']);
 
 //////////////////////////////// APP APIS //////////////////////////////////////////////
 Route::group(['middleware' => 'auth:sanctum'], function () {
@@ -88,7 +89,6 @@ Route::group(['middleware' => 'auth:sanctum'], function () {
         Route::post('register', [SchoolsController::class, 'registerPotentialSchool']);
     });
     // Protected routes for authenticated users
-    Route::get('fetch-necessary-params', [Controller::class, 'fetchNecessayParams']);
     Route::get('user-notifications', [UsersController::class, 'userNotifications']);
     Route::get('notification/mark-as-read', [UsersController::class, 'markNotificationAsRead']);
 
