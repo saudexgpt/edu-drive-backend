@@ -828,7 +828,7 @@ class ResultsController extends Controller
     public function classBroadSheet(Request $request, Result $result)
     {
         $user = $this->getUser();
-        $class_teacher_id = $request->class_teacher_id;
+        $class_teacher_id = (int) $request->class_teacher_id;
         //$term_spec = $request->term_spec;
         $class_teacher = ClassTeacher::find($class_teacher_id);
 
@@ -838,8 +838,8 @@ class ResultsController extends Controller
         $curriculum_level_group_id = $class_teacher->level->curriculum_level_group_id;
         $grades = $this->getLevelGrades($curriculum_level_group_id);
         $result_settings = $this->getResultSettings($curriculum_level_group_id);
-        $sess_id = $request->sess_id;
-        $term_id = $request->term_id;
+        $sess_id = (int) $request->sess_id;
+        $term_id = (int) $request->term_id;
         $sub_term = (isset($request->sub_term) && $request->sub_term !== '') ? $request->sub_term : 'full';
 
 
