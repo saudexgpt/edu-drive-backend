@@ -502,13 +502,14 @@ class Result extends Model
             list($cgrade, $ccolor, $cgrade_point) = $this->resultGrade($student_result->cummulative_score, $grades);
 
             $student_result->cummulative_grade = $cgrade;
-            if ($result_settings->display_cummulative_score_on_result_sheet == 'yes') {
+            $sub_term = $options['sub_term'];
+            $student_result->remark = $this->resultRemark($result_grade, $grades);
+            
+            if ($sub_term == 'full' && $result_settings->display_cummulative_score_on_result_sheet == 'yes') {
 
                 $student_result->remark = $this->resultRemark($cgrade, $grades);
-            } else {
-
-                $student_result->remark = $this->resultRemark($result_grade, $grades);
             }
+            
 
             if ($total != null) {
                 $result_count++;
