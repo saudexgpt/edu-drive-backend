@@ -433,13 +433,16 @@ class Result extends Model
                 ->select(\DB::raw('AVG(total) as cummulative_score'))->first();
 
             //fetch the performance of students for each subject in this class
-            $subject_result_details = Result::where([
-                'subject_teacher_id' => $subject_teacher_id,
-                'school_id' => $options['school_id'],
-                'sess_id' => $options['sess_id'],
-                'term_id' => $options['term'],
-                'result_status' => 'Applicable'
-            ])->get();
+            $subject_result_details = Result::join('students', 'students.id', '=', 'results.student_id')
+            ->where([
+                'results.subject_teacher_id' => $subject_teacher_id,
+                'results.school_id' => $options['school_id'],
+                'results.sess_id' => $options['sess_id'],
+                'results.term_id' => $options['term'],
+                'results.result_status' => 'Applicable'
+            ])
+            ->where('students.studentship_status', '=', 'active')
+            ->get();
 
             list($subject_class_average, $subject_highest_score, $subject_lowest_score, $male_average, $female_average, $subject_totals) = $this->subjectStudentPerformance($subject_result_details, $grades, $result_settings, $options);
 
@@ -461,13 +464,15 @@ class Result extends Model
             $student_result->female_average = $female_average;
             $student_result->subject_totals = $subject_totals;
             if ($term_id === 3) {
-                $termly_totals = Result::where([
-                    'subject_teacher_id' => $subject_teacher_id,
-                    'school_id' => $options['school_id'],
-                    'sess_id' => $options['sess_id'],
-                    'student_id' => $student_result->student_id,
-                    'result_status' => 'Applicable'
-                ])->select('term_id', 'total')->get();
+                $termly_totals = Result::join('students', 'students.id', '=', 'results.student_id')
+                ->where([
+                    'results.subject_teacher_id' => $subject_teacher_id,
+                    'results.school_id' => $options['school_id'],
+                    'results.sess_id' => $options['sess_id'],
+                    'results.student_id' => $student_result->student_id,
+                    'results.result_status' => 'Applicable'
+                ])->where('students.studentship_status', '=', 'active')
+                ->select('term_id', 'total')->get();
                 $cumulative_total = 0;
                 $count = 0;
                 foreach ($termly_totals as $termly_total) {
