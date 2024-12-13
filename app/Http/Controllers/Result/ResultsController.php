@@ -1121,29 +1121,31 @@ class ResultsController extends Controller
             'sub_term' => $term_spec,
             'student_id' => $student_id
         ])->first();
-        $student_results = Result::with(['subjectTeacher.staff.user', 'subjectTeacher.subject'])->where(
+        $student_results = Result::with(['subjectTeacher.staff.user', 'subjectTeacher.subject'])
+        ->join('students', 'students.id', '=', 'results.student_id')
+        ->where(
             [
-                'class_teacher_id' => $class_teacher_id,
-                'school_id' => $school_id,
-                'sess_id' => $sess_id,
-                'term_id' => $term_id,
-                'student_id' => $student_id,
-                'result_status' => 'Applicable'
+                'results.class_teacher_id' => $class_teacher_id,
+                'results.school_id' => $school_id,
+                'results.sess_id' => $sess_id,
+                'results.term_id' => $term_id,
+                'results.student_id' => $student_id,
+                'results.result_status' => 'Applicable'
             ]
         )
-        ->join('students', 'students.id', '=', 'results.student_id')
         ->where('students.studentship_status', '=', 'active')
         ->orderBy('subject_teacher_id')
         ->select('results.*')
         ->get();
 
-        $students_in_class = StudentsInClass::with('student')->where([
-            'class_teacher_id' => $class_teacher_id,
-            'sess_id' => $sess_id,
-            // 'term_id' => $term_id,
-            'school_id' => $school_id,
-        ])
+        $students_in_class = StudentsInClass::with('student')
         ->join('students', 'students.id', '=', 'students_in_classes.student_id')
+        ->where([
+            'students_in_classes.class_teacher_id' => $class_teacher_id,
+            'students_in_classes.sess_id' => $sess_id,
+            // 'term_id' => $term_id,
+            'students_in_classes.school_id' => $school_id,
+        ])
         ->where('students.studentship_status', '=', 'active')
         ->select('students_in_classes.*')
         ->get();
