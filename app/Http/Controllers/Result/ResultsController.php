@@ -1130,14 +1130,23 @@ class ResultsController extends Controller
                 'student_id' => $student_id,
                 'result_status' => 'Applicable'
             ]
-        )->orderBy('subject_teacher_id')->get();
+        )
+        ->join('students', 'students.id', '=', 'results.student_id')
+        ->where('students.studentship_status', '=', 'active')
+        ->orderBy('subject_teacher_id')
+        ->select('results.*')
+        ->get();
 
         $students_in_class = StudentsInClass::with('student')->where([
             'class_teacher_id' => $class_teacher_id,
             'sess_id' => $sess_id,
             // 'term_id' => $term_id,
             'school_id' => $school_id,
-        ])->get();
+        ])
+        ->join('students', 'students.id', '=', 'students_in_classes.student_id')
+        ->where('students.studentship_status', '=', 'active')
+        ->select('students_in_classes.*')
+        ->get();
 
         // $no_in_class = $students_in_class->count();
 
