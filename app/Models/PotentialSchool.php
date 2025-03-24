@@ -57,7 +57,18 @@ class PotentialSchool extends Model
             $school->admin_gender = (isset($request->admin_gender)) ? $request->admin_gender : 'Male';
 
             $school->name = $request->name;
-            $school->slug = strtoupper($request->slug);
+            $name_array = explode(' ', $request->name);
+            $slug = '';
+            $count = 0;
+            foreach ($name_array as $name_word) {
+                if ($count > 0) {                    
+                    $slug .= mb_substr($name_word, 0, 1);
+                }else {
+                    $slug .= mb_substr($name_word, 0, 2);
+                }
+                $count++;
+            }
+            $school->slug = strtoupper($slug);
             $school->address = $request->address;
             $school->lga = $request->lga_id;
             $school->estimated_no_of_students = $request->estimated_no_of_students;
