@@ -61,10 +61,11 @@ class PotentialSchool extends Model
             $slug = '';
             $count = 0;
             foreach ($name_array as $name_word) {
-                if ($count > 0) {                    
-                    $slug .= mb_substr($name_word, 0, 1);
+                if ($count == 0) {     
+                    
+                    $slug .= substr($name_word, 0, 2);
                 }else {
-                    $slug .= mb_substr($name_word, 0, 2);
+                    $slug .= substr($name_word, 0, 1);
                 }
                 $count++;
             }
