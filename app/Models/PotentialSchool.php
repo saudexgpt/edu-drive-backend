@@ -36,7 +36,10 @@ class PotentialSchool extends Model
     public function registerSchool($request, $registrar_id)
     {
 
-        $school = PotentialSchool::where('name', $request->name)->orWhere('email', $request->email)->orWhere('slug', $request->slug)->first();
+        $school = PotentialSchool::where('name', $request->name)
+        // ->orWhere('email', $request->email)
+        // ->orWhere('slug', $request->slug)
+        ->first();
 
         if (!$school) {
             // $inputs = $request->all();

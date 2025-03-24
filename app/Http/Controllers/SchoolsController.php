@@ -262,10 +262,7 @@ class SchoolsController extends Controller
         // $uniq_num_gen_obj = new UniqNumGen();
         $school = new PotentialSchool();
         $user = $this->getUser();
-        $user_id = NULL;
-        if ($user) {
-            $user_id = $user->id;
-        }
+        $user_id = ( $user) ? $user->id : NULL;
         $registered_school = $school->registerSchool($request, $user_id);
         if ($registered_school === 'Exist') {
             return "This School's information already exist";
