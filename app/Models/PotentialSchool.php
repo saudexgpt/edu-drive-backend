@@ -58,16 +58,10 @@ class PotentialSchool extends Model
 
             $school->name = $request->name;
             $name_array = explode(' ', $request->name);
-            $slug = '';
-            $count = 0;
-            foreach ($name_array as $name_word) {
-                if ($count == 0) {     
-                    
-                    $slug .= substr($name_word, 0, 2);
-                }else {
-                    $slug .= substr($name_word, 0, 1);
-                }
-                $count++;
+            $slug = substr($name_array[0], 0, 2); // fick first two letters from first word
+            $count = count($name_array);
+            for ($i=1; $i <= $count ; $i++) { 
+                $slug .= substr($name_array[$i], 0, 1);
             }
             $school->slug = strtoupper($slug);
             $school->address = $request->address;
