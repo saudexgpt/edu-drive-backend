@@ -60,7 +60,7 @@ class PotentialSchool extends Model
             $name_array = explode(' ', $request->name);
             $slug = substr($name_array[0], 0, 2); // fick first two letters from first word
             $count = count($name_array);
-            for ($i=1; $i <= $count ; $i++) { 
+            for ($i=1; $i < $count ; $i++) { 
                 $slug .= substr($name_array[$i], 0, 1);
             }
             $school->slug = strtoupper($slug);
